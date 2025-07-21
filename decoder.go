@@ -6,7 +6,7 @@ import (
 
 	"github.com/paulmach/osm"
 	"github.com/paulmach/protoscan"
-	"github.com/royalcat/rgeocache/osmpbfdb/osmproto"
+	"github.com/royalcat/osmpbfdb/osmproto"
 	"google.golang.org/protobuf/proto"
 )
 

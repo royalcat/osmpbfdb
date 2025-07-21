@@ -1183,8 +1183,8 @@ const file_osmproto_osmformat_proto_rawDesc = "" +
 	"MemberType\x12\b\n" +
 	"\x04NODE\x10\x00\x12\a\n" +
 	"\x03WAY\x10\x01\x12\f\n" +
-	"\bRELATION\x10\x02BC\n" +
-	"\rcrosby.binaryZ2github.com/royalcat/rgeocache/kv/osmpbfdb/osmproto"
+	"\bRELATION\x10\x02B6\n" +
+	"\rcrosby.binaryZ%github.com/royalcat/osmpbfdb/osmproto"
 
 var (
 	file_osmproto_osmformat_proto_rawDescOnce sync.Once

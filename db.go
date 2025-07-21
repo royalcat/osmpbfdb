@@ -13,7 +13,7 @@ import (
 	"github.com/goware/singleflight"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/paulmach/osm"
-	"github.com/royalcat/rgeocache/osmpbfdb/osmproto"
+	"github.com/royalcat/osmpbfdb/osmproto"
 	"google.golang.org/protobuf/proto"
 )
 

@@ -198,8 +198,8 @@ const file_osmproto_fileformat_proto_rawDesc = "" +
 	"BlobHeader\x12\x12\n" +
 	"\x04type\x18\x01 \x02(\tR\x04type\x12\x1c\n" +
 	"\tindexdata\x18\x02 \x01(\fR\tindexdata\x12\x1a\n" +
-	"\bdatasize\x18\x03 \x02(\x05R\bdatasizeBC\n" +
-	"\rcrosby.binaryZ2github.com/royalcat/rgeocache/kv/osmpbfdb/osmproto"
+	"\bdatasize\x18\x03 \x02(\x05R\bdatasizeB6\n" +
+	"\rcrosby.binaryZ%github.com/royalcat/osmpbfdb/osmproto"
 
 var (
 	file_osmproto_fileformat_proto_rawDescOnce sync.Once

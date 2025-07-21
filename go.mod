@@ -8,7 +8,6 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/paulmach/osm v0.8.0
 	github.com/paulmach/protoscan v0.2.1
-	github.com/royalcat/rgeocache v1.2.2
 	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
 	google.golang.org/protobuf v1.36.6
 )

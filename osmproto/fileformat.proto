@@ -25,7 +25,7 @@ option java_package = "crosby.binary";
 package osmproto;
 
 // protoc --java_out=../.. fileformat.proto
-option go_package = "github.com/royalcat/rgeocache/kv/osmpbfdb/osmproto";
+option go_package = "github.com/royalcat/osmpbfdb/osmproto";
 
 //
 //  STORAGE LAYER: Storing primitives.
