@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -124,6 +125,7 @@ func (dec *DB) buildIndex() error {
 
 		objects, err := dd.Decode(blob)
 		if err != nil {
+			slog.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobHeader.GetType()), slog.Any("error", err))
 			return err
 		}
 
