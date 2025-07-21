@@ -1,0 +1,10 @@
+.stignore
+bin
+build
+install
+data
+go.work
+go.work.sum
+*.out
+*.test
+*.osm.pbf
