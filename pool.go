@@ -1,4 +1,3 @@
-// Package syncpool provides a generic wrapper around sync.Pool
 package osmpbfdb
 
 import (

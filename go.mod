@@ -9,6 +9,7 @@ require (
 	github.com/paulmach/osm v0.8.0
 	github.com/paulmach/protoscan v0.2.1
 	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
+	golang.org/x/sync v0.16.0
 	google.golang.org/protobuf v1.36.6
 )
 

@@ -10,11 +10,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var (
-	headerBufPool = newSyncPool[[]byte](func() []byte { return make([]byte, maxBlobHeaderSize) })
-	blobBufPool   = newSyncPool[[]byte](func() []byte { return make([]byte, maxBlobSize) })
-)
-
 // dataDecoder is a decoder for Blob with OSMData (PrimitiveBlock).
 type dataDecoder struct {
 	data []byte

@@ -3,6 +3,7 @@ package osmpbfdb
 import (
 	"cmp"
 	"slices"
+	"sync"
 
 	"golang.org/x/exp/constraints"
 )
@@ -14,6 +15,8 @@ type window[K constraints.Integer, V comparable] struct {
 }
 
 type indexBuilder[K constraints.Integer, V comparable] struct {
+	mu sync.Mutex
+
 	currentWindow *window[K, V]
 	data          []window[K, V]
 }
@@ -23,6 +26,9 @@ func newIndexBuilder[K constraints.Integer, V comparable]() *indexBuilder[K, V] 
 }
 
 func (b *indexBuilder[K, V]) Add(k K, v V) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
 	if b.currentWindow == nil {
 		b.currentWindow = &window[K, V]{minK: k, maxK: 1, v: v}
 		return
@@ -39,6 +45,9 @@ func (b *indexBuilder[K, V]) Add(k K, v V) {
 }
 
 func (b *indexBuilder[K, V]) Build() winindex[K, V] {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
 	if b.currentWindow != nil {
 		b.data = append(b.data, *b.currentWindow)
 	}
