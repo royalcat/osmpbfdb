@@ -8,8 +8,8 @@ import (
 
 func (db *DB) IterRelations() iter.Seq2[*osm.Relation, error] {
 	return func(yield func(*osm.Relation, error) bool) {
-		for _, window := range db.relationIndex.data {
-			objects, err := db.readObjects(int64(window.v))
+		for window := range db.relationIndex.RangeWindows() {
+			objects, err := db.readObjects(int64(window.Value))
 			if err != nil {
 				if !yield(nil, err) {
 					return
@@ -31,8 +31,8 @@ func (db *DB) IterRelations() iter.Seq2[*osm.Relation, error] {
 
 func (db *DB) IterNodes() iter.Seq2[*osm.Node, error] {
 	return func(yield func(*osm.Node, error) bool) {
-		for _, window := range db.nodeIndex.data {
-			objects, err := db.readObjects(int64(window.v))
+		for window := range db.nodeIndex.RangeWindows() {
+			objects, err := db.readObjects(int64(window.Value))
 			if err != nil {
 				if !yield(nil, err) {
 					return
@@ -54,8 +54,8 @@ func (db *DB) IterNodes() iter.Seq2[*osm.Node, error] {
 
 func (db *DB) IterWays() iter.Seq2[*osm.Way, error] {
 	return func(yield func(*osm.Way, error) bool) {
-		for _, window := range db.wayIndex.data {
-			objects, err := db.readObjects(int64(window.v))
+		for window := range db.wayIndex.RangeWindows() {
+			objects, err := db.readObjects(int64(window.Value))
 			if err != nil {
 				if !yield(nil, err) {
 					return

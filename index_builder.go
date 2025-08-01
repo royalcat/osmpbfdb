@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
+	"path"
 
 	"github.com/paulmach/osm"
+	"github.com/royalcat/osmpbfdb/internal/winindex"
 	"github.com/royalcat/osmpbfdb/osmproto"
 	"golang.org/x/sync/errgroup"
 )
 
 // buildIndex decoding process using n goroutines.
-func (dec *DB) buildIndex() error {
+func (dec *DB) buildIndex(indexDir string) error {
 	bytesRead := int64(0)
 
 	// read OSMHeader
@@ -34,9 +37,30 @@ func (dec *DB) buildIndex() error {
 	dd := &dataDecoder{}
 
 	// objectIndexBuilder := indexBuilder[osm.ObjectID, int64]{}
-	nodeIndexBuilder := indexBuilder[osm.NodeID, uint32]{}
-	wayIndexBuilder := indexBuilder[osm.WayID, uint32]{}
-	relationIndexBuilder := indexBuilder[osm.RelationID, uint32]{}
+	nodeIndexFile, err := os.OpenFile(path.Join(indexDir, "nodes"), os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open node index file: %w", err)
+	}
+	nodeIndexBuilder, err := winindex.OpenIndexBuilder[osm.NodeID](nodeIndexFile)
+	if err != nil {
+		return fmt.Errorf("failed to open node index builder: %w", err)
+	}
+	wayIndexFile, err := os.OpenFile(path.Join(indexDir, "ways"), os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open way index file: %w", err)
+	}
+	wayIndexBuilder, err := winindex.OpenIndexBuilder[osm.WayID](wayIndexFile)
+	if err != nil {
+		return fmt.Errorf("failed to open way index builder: %w", err)
+	}
+	relationIndexFile, err := os.OpenFile(path.Join(indexDir, "relations"), os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open relation index file: %w", err)
+	}
+	relationIndexBuilder, err := winindex.OpenIndexBuilder[osm.RelationID](relationIndexFile)
+	if err != nil {
+		return fmt.Errorf("failed to open relation index builder: %w", err)
+	}
 
 	var group errgroup.Group
 	type blobAt struct {
@@ -105,9 +129,18 @@ func (dec *DB) buildIndex() error {
 	}
 
 	// dec.objectIndex = objectIndexBuilder.Build()
-	dec.nodeIndex = nodeIndexBuilder.Build()
-	dec.wayIndex = wayIndexBuilder.Build()
-	dec.relationIndex = relationIndexBuilder.Build()
+	dec.nodeIndex, err = nodeIndexBuilder.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build node index: %w", err)
+	}
+	dec.wayIndex, err = wayIndexBuilder.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build way index: %w", err)
+	}
+	dec.relationIndex, err = relationIndexBuilder.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build relation index: %w", err)
+	}
 
 	return nil
 }

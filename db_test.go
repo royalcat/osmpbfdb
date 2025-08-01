@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/paulmach/osm"
-	"golang.org/x/exp/constraints"
+	"github.com/royalcat/osmpbfdb/internal/winindex"
 )
 
 const (
@@ -223,7 +223,17 @@ func TestDB(t *testing.T) {
 	}
 	defer f.Close()
 
-	d, err := OpenDB(context.Background(), f)
+	indexDir, err := os.MkdirTemp("", "osmpbfdb-index")
+	if err != nil {
+		t.Fatalf("failed to create temp index dir: %v", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(indexDir); err != nil {
+			t.Fatalf("failed to remove temp index dir: %v", err)
+		}
+	}()
+
+	d, err := OpenDB(context.Background(), f, indexDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +246,7 @@ func TestDB(t *testing.T) {
 	const testCout = 10
 
 	for range testCout {
-		randomKey := randomKey(d.nodeIndex.data)
+		randomKey := randomKey(d.nodeIndex)
 		obj, err := d.GetNode(randomKey)
 		if err != nil {
 			t.Fatal(err)
@@ -247,7 +257,7 @@ func TestDB(t *testing.T) {
 	}
 
 	for range testCout {
-		randomKey := randomKey(d.wayIndex.data)
+		randomKey := randomKey(d.wayIndex)
 		obj, err := d.GetWay(randomKey)
 		if err != nil {
 			t.Fatal(err)
@@ -258,7 +268,7 @@ func TestDB(t *testing.T) {
 	}
 
 	for range testCout {
-		randomKey := randomKey(d.relationIndex.data)
+		randomKey := randomKey(d.relationIndex)
 		obj, err := d.GetRelation(randomKey)
 		if err != nil {
 			t.Fatal(err)
@@ -285,6 +295,7 @@ func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
 }
 
+// FIXME after index update aroud half of run time is spent generating random keys
 func BenchmarkGet(b *testing.B) {
 	ft := &OSMFileTest{
 		FileName:     London,
@@ -309,7 +320,17 @@ func BenchmarkGet(b *testing.B) {
 	}
 	defer f.Close()
 
-	d, err := OpenDB(context.Background(), f)
+	indexDir, err := os.MkdirTemp("", "osmpbfdb-index")
+	if err != nil {
+		b.Fatalf("failed to create temp index dir: %v", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(indexDir); err != nil {
+			b.Fatalf("failed to remove temp index dir: %v", err)
+		}
+	}()
+
+	d, err := OpenDB(context.Background(), f, indexDir)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -319,10 +340,8 @@ func BenchmarkGet(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		randomKey := randomKey(d.nodeIndex.data)
+	for b.Loop() {
+		randomKey := randomKey(d.nodeIndex)
 
 		obj, err := d.GetNode(randomKey)
 		if err != nil {
@@ -336,12 +355,27 @@ func BenchmarkGet(b *testing.B) {
 
 }
 
-func randomKey[K constraints.Integer, V comparable](data []window[K, V]) K {
-	randomWindow := data[rand.Intn(len(data))]
-
-	if randomWindow.minK == randomWindow.maxK {
-		return randomWindow.minK
+func randomKey[K ~int64](index *winindex.Index[K]) K {
+	windowCount := index.WindowCount()
+	if windowCount == 0 {
+		return 0 // No windows, return zero value
 	}
 
-	return randomWindow.minK + K(rand.Intn(int(randomWindow.maxK-randomWindow.minK)))
+	randomWindowIndex := rand.Intn(int(windowCount))
+
+	var randomWindow winindex.Window[K]
+	var i int
+	for window := range index.RangeWindows() {
+		if i == randomWindowIndex {
+			randomWindow = window
+			break
+		}
+		i++
+	}
+
+	if randomWindow.MinKey == randomWindow.MaxKey {
+		return randomWindow.MinKey
+	}
+
+	return randomWindow.MinKey + K(rand.Intn(int(randomWindow.MaxKey-randomWindow.MinKey)))
 }

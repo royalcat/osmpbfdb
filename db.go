@@ -11,6 +11,7 @@ import (
 	"github.com/goware/singleflight"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/paulmach/osm"
+	"github.com/royalcat/osmpbfdb/internal/winindex"
 )
 
 const (
@@ -54,13 +55,13 @@ type DB struct {
 
 	// id to block offset with it
 	// objectIndex   bindex[osm.ObjectID, int64]
-	nodeIndex     winindex[osm.NodeID, uint32]
-	wayIndex      winindex[osm.WayID, uint32]
-	relationIndex winindex[osm.RelationID, uint32]
+	nodeIndex     *winindex.Index[osm.NodeID]
+	wayIndex      *winindex.Index[osm.WayID]
+	relationIndex *winindex.Index[osm.RelationID]
 }
 
 // newDecoder returns a new decoder that reads from r.
-func OpenDB(ctx context.Context, r io.ReaderAt) (*DB, error) {
+func OpenDB(ctx context.Context, r io.ReaderAt, indexDir string) (*DB, error) {
 	cache, err := lru.New2Q[int64, []osm.Object](1024)
 	if err != nil {
 		return nil, err
@@ -71,7 +72,7 @@ func OpenDB(ctx context.Context, r io.ReaderAt) (*DB, error) {
 		cache: cache,
 	}
 
-	err = db.buildIndex()
+	err = db.buildIndex(indexDir)
 	if err != nil {
 		return nil, err
 	}

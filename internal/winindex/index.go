@@ -1,8 +1,9 @@
-package index
+package winindex
 
 import (
 	"encoding/binary"
 	"fmt"
+	"iter"
 	"os"
 	"sort"
 	"sync"
@@ -10,9 +11,9 @@ import (
 	"github.com/edsrzf/mmap-go"
 )
 
-type Window struct {
-	MaxKey int64
-	MinKey int64
+type Window[K ~int64] struct {
+	MaxKey K
+	MinKey K
 	Value  uint32
 }
 
@@ -20,32 +21,31 @@ const windowSize = 8 + 8 + 4
 
 var endian = binary.LittleEndian
 
-type IndexBuilder struct {
+type IndexBuilder[K ~int64] struct {
 	mu sync.Mutex
 
 	file *os.File
 
-	currentWindow *Window
+	currentWindow *Window[K]
 }
 
-func OpenIndexBuilder(file *os.File) (*IndexBuilder, error) {
+func OpenIndexBuilder[K ~int64](file *os.File) (*IndexBuilder[K], error) {
 	err := file.Truncate(0)
 	if err != nil {
 		return nil, err
 	}
 
-	return &IndexBuilder{
+	return &IndexBuilder[K]{
 		file: file,
 	}, nil
 }
 
-// Insert appends an entry. Only allowed in StageInsert.
-func (b *IndexBuilder) Add(k int64, v uint32) error {
+func (b *IndexBuilder[K]) Add(k K, v uint32) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	if b.currentWindow == nil {
-		b.currentWindow = &Window{MinKey: k, MaxKey: k, Value: v}
+		b.currentWindow = &Window[K]{MinKey: k, MaxKey: k, Value: v}
 		return nil
 	}
 
@@ -58,12 +58,12 @@ func (b *IndexBuilder) Add(k int64, v uint32) error {
 			return err
 		}
 
-		b.currentWindow = &Window{MinKey: k, MaxKey: k, Value: v}
+		b.currentWindow = &Window[K]{MinKey: k, MaxKey: k, Value: v}
 		return nil
 	}
 }
 
-func (b *IndexBuilder) appendWindow() error {
+func (b *IndexBuilder[K]) appendWindow() error {
 	if b.currentWindow == nil {
 		return nil
 	}
@@ -102,39 +102,41 @@ func (s *mmapEntrySorter) Swap(i, j int) {
 	copy(s.mmap[offj:offj+windowSize], tmp)
 }
 
-func (b *IndexBuilder) Build() error {
+func (b *IndexBuilder[K]) Build() (*Index[K], error) {
 	b.appendWindow()
 	err := b.file.Sync()
 	if err != nil {
-		return fmt.Errorf("failed to sync file: %w", err)
+		return nil, fmt.Errorf("failed to sync file: %w", err)
 	}
 
 	m, err := mmap.Map(b.file, mmap.RDWR, 0)
 	if err != nil {
-		return fmt.Errorf("failed to mmap file: %w", err)
+		return nil, fmt.Errorf("failed to mmap file: %w", err)
 	}
-	defer m.Unmap()
 
 	stat, err := b.file.Stat()
 	if err != nil {
-		return fmt.Errorf("failed to get file stats: %w", err)
+		return nil, fmt.Errorf("failed to get file stats: %w", err)
 	}
 
 	count := int(stat.Size() / windowSize)
 
 	sort.Sort(&mmapEntrySorter{m, count})
 
-	return nil
+	return &Index[K]{
+		file:  b.file,
+		mmap:  m,
+		count: int64(count),
+	}, nil
 }
 
-type Index struct {
-	mu    sync.RWMutex
+type Index[K ~int64] struct {
 	file  *os.File
 	mmap  mmap.MMap
 	count int64
 }
 
-func OpenIndex(file *os.File) (*Index, error) {
+func OpenIndex[K ~int64](file *os.File) (*Index[K], error) {
 	info, err := file.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file stats: %w", err)
@@ -144,17 +146,13 @@ func OpenIndex(file *os.File) (*Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Index{
+	return &Index[K]{
 		mmap:  mm,
 		count: info.Size() / windowSize,
 	}, nil
 }
 
-// Get performs a binary search in sorted (read-only) mode.
-func (idx *Index) Get(key int64) (uint32, bool) {
-	idx.mu.RLock()
-	defer idx.mu.RUnlock()
-
+func (idx *Index[K]) Get(key K) (uint32, bool) {
 	left, right := int64(0), idx.count-1
 
 	for left <= right {
@@ -163,10 +161,10 @@ func (idx *Index) Get(key int64) (uint32, bool) {
 		minKey := int64(binary.LittleEndian.Uint64(idx.mmap[o:]))
 		maxKey := int64(binary.LittleEndian.Uint64(idx.mmap[o+8:]))
 
-		if key >= minKey && key <= maxKey {
+		if int64(key) >= minKey && int64(key) <= maxKey {
 			val := binary.LittleEndian.Uint32(idx.mmap[o+16:])
 			return val, true
-		} else if key < minKey {
+		} else if int64(key) < minKey {
 			right = mid - 1
 		} else {
 			left = mid + 1
@@ -176,22 +174,24 @@ func (idx *Index) Get(key int64) (uint32, bool) {
 	return 0, false
 }
 
-func (idx *Index) RangeWindows(f func(Window) bool) {
-	idx.mu.RLock()
-	defer idx.mu.RUnlock()
-
-	for i := int64(0); i < idx.count; i++ {
-		o := i * windowSize
-		minKey := int64(binary.LittleEndian.Uint64(idx.mmap[o:]))
-		maxKey := int64(binary.LittleEndian.Uint64(idx.mmap[o+8:]))
-		value := binary.LittleEndian.Uint32(idx.mmap[o+16:])
-		if !f(Window{MinKey: minKey, MaxKey: maxKey, Value: value}) {
-			break
+func (idx *Index[K]) RangeWindows() iter.Seq[Window[K]] {
+	return func(yield func(Window[K]) bool) {
+		for i := int64(0); i < idx.count; i++ {
+			o := i * windowSize
+			minKey := K(binary.LittleEndian.Uint64(idx.mmap[o:]))
+			maxKey := K(binary.LittleEndian.Uint64(idx.mmap[o+8:]))
+			value := binary.LittleEndian.Uint32(idx.mmap[o+16:])
+			if !yield(Window[K]{MinKey: minKey, MaxKey: maxKey, Value: value}) {
+				break
+			}
 		}
 	}
 }
 
-// Close flushes (if needed) and closes the mmap/file.
-func (idx *Index) Close() error {
+func (idx *Index[K]) WindowCount() int64 {
+	return idx.count
+}
+
+func (idx *Index[K]) Close() error {
 	return idx.mmap.Unmap()
 }
