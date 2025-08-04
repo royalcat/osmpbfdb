@@ -14,6 +14,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// move ref (mask 0x00FFFFFFFFFF0000) to fit int48
+func compactRef(ref int64) int64 {
+	return ref >> 16
+}
+
+func unCompactRef(ref int64) int64 {
+	return ref << 16
+}
+
 // buildIndex decoding process using n goroutines.
 func (dec *DB) buildIndex(indexDir string) error {
 	bytesRead := int64(0)
@@ -41,7 +50,7 @@ func (dec *DB) buildIndex(indexDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open node index file: %w", err)
 	}
-	nodeIndexBuilder, err := winindex.OpenIndexBuilder[osm.NodeID](nodeIndexFile)
+	nodeIndexBuilder, err := winindex.OpenIndexBuilder(nodeIndexFile)
 	if err != nil {
 		return fmt.Errorf("failed to open node index builder: %w", err)
 	}
@@ -49,7 +58,7 @@ func (dec *DB) buildIndex(indexDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open way index file: %w", err)
 	}
-	wayIndexBuilder, err := winindex.OpenIndexBuilder[osm.WayID](wayIndexFile)
+	wayIndexBuilder, err := winindex.OpenIndexBuilder(wayIndexFile)
 	if err != nil {
 		return fmt.Errorf("failed to open way index builder: %w", err)
 	}
@@ -57,7 +66,7 @@ func (dec *DB) buildIndex(indexDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open relation index file: %w", err)
 	}
-	relationIndexBuilder, err := winindex.OpenIndexBuilder[osm.RelationID](relationIndexFile)
+	relationIndexBuilder, err := winindex.OpenIndexBuilder(relationIndexFile)
 	if err != nil {
 		return fmt.Errorf("failed to open relation index builder: %w", err)
 	}
@@ -111,11 +120,11 @@ func (dec *DB) buildIndex(indexDir string) error {
 				// objectIndexBuilder.Add(obj.ObjectID(), bytesRead)
 				switch obj := obj.(type) {
 				case *osm.Node:
-					nodeIndexBuilder.Add(obj.ID, uint32(blobAt.offset))
+					nodeIndexBuilder.Add(compactRef(obj.ID.FeatureID().Ref()), uint32(blobAt.offset))
 				case *osm.Way:
-					wayIndexBuilder.Add(obj.ID, uint32(blobAt.offset))
+					wayIndexBuilder.Add(compactRef(obj.ID.FeatureID().Ref()), uint32(blobAt.offset))
 				case *osm.Relation:
-					relationIndexBuilder.Add(obj.ID, uint32(blobAt.offset))
+					relationIndexBuilder.Add(compactRef(obj.ID.FeatureID().Ref()), uint32(blobAt.offset))
 				}
 			}
 		}

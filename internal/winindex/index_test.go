@@ -30,9 +30,11 @@ func TestIndex(t *testing.T) {
 		{500, 5000},
 		{1000, 10000},
 		{30, 300},
+		{maxInt48 - 1, 123},
+		{maxInt48, 123},
 	}
 
-	b, err := winindex.OpenIndexBuilder[int64](file)
+	b, err := winindex.OpenIndexBuilder(file)
 	if err != nil {
 		t.Fatalf("failed to open index builder: %v", err)
 	}
@@ -46,9 +48,9 @@ func TestIndex(t *testing.T) {
 		t.Fatalf("failed to build index: %v", err)
 	}
 
-	// for _, w := range idx.RangeWindows() {
-	// 	fmt.Printf("Window: MinKey=%d, MaxKey=%d, Value=%d\n", w.MinKey, w.MaxKey, w.Value)
-	// }
+	for w := range idx.RangeWindows() {
+		fmt.Printf("Window: MinKey=%d, MaxKey=%d, Value=%d\n", w.MinKey, w.MaxKey, w.Value)
+	}
 
 	for _, v := range testValues {
 		if err := expectInIndex(idx, v.Key, v.Value); err != nil {
@@ -71,10 +73,10 @@ func TestIndex(t *testing.T) {
 	// }
 }
 
-func expectInIndex[K ~int64](index *winindex.Index[K], k K, v uint32) error {
+func expectInIndex(index *winindex.Index, k int64, v uint32) error {
 	res, ok := index.Get(k)
 	if !ok {
-		return fmt.Errorf("expected to find %v", k)
+		return fmt.Errorf("not found %v", k)
 	}
 	if res != v {
 		return fmt.Errorf("expected %v, got %v", v, res)

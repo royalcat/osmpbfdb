@@ -53,11 +53,9 @@ type DB struct {
 	cache     *lru.TwoQueueCache[int64, []osm.Object]
 	readGroup singleflight.Group[int64, []osm.Object]
 
-	// id to block offset with it
-	// objectIndex   bindex[osm.ObjectID, int64]
-	nodeIndex     *winindex.Index[osm.NodeID]
-	wayIndex      *winindex.Index[osm.WayID]
-	relationIndex *winindex.Index[osm.RelationID]
+	nodeIndex     *winindex.Index
+	wayIndex      *winindex.Index
+	relationIndex *winindex.Index
 }
 
 // newDecoder returns a new decoder that reads from r.
@@ -133,7 +131,7 @@ func findInObjects[objType osm.Object](objects []osm.Object, id osm.FeatureID) (
 }
 
 func (db *DB) GetNode(id osm.NodeID) (*osm.Node, error) {
-	offset, ok := db.nodeIndex.Get(id)
+	offset, ok := db.nodeIndex.Get(compactRef(id.FeatureID().Ref()))
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -147,7 +145,7 @@ func (db *DB) GetNode(id osm.NodeID) (*osm.Node, error) {
 }
 
 func (db *DB) GetWay(id osm.WayID) (*osm.Way, error) {
-	offset, ok := db.wayIndex.Get(id)
+	offset, ok := db.wayIndex.Get(compactRef(id.FeatureID().Ref()))
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -161,7 +159,7 @@ func (db *DB) GetWay(id osm.WayID) (*osm.Way, error) {
 }
 
 func (db *DB) GetRelation(id osm.RelationID) (*osm.Relation, error) {
-	offset, ok := db.relationIndex.Get(id)
+	offset, ok := db.relationIndex.Get(compactRef(id.FeatureID().Ref()))
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -199,7 +197,7 @@ func (db *DB) readObjects(offset int64) ([]osm.Object, error) {
 			return nil, err
 		}
 
-		slices.SortStableFunc(objects, func(a, b osm.Object) int {
+		slices.SortFunc(objects, func(a, b osm.Object) int {
 			return cmp.Compare(featureID(a.ObjectID()), featureID(b.ObjectID()))
 		})
 
