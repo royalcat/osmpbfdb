@@ -1,6 +1,7 @@
 package winindex
 
 import (
+	"bufio"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -135,9 +136,16 @@ func (b *IndexBuilder) appendWindow() error {
 
 	data, _ := b.currentWindow.MarshalBinary()
 
-	_, err := b.file.Write(data)
+	w := bufio.NewWriterSize(b.file, windowSize*1024)
+
+	_, err := w.Write(data)
 	if err != nil {
 		return fmt.Errorf("failed to write window: %w", err)
+	}
+
+	err = w.Flush()
+	if err != nil {
+		return fmt.Errorf("failed to flush buffer: %w", err)
 	}
 
 	b.currentWindow = nil
@@ -155,8 +163,6 @@ func (s *mmapEntrySorter) Less(i, j int) bool {
 
 	ki := int48ToInt64(binary.BigEndian.Uint64(append([]byte{0x00, 0x00}, s.mmap[offi:offi+6]...)))
 	kj := int48ToInt64(binary.BigEndian.Uint64(append([]byte{0x00, 0x00}, s.mmap[offj:offj+6]...)))
-	// ki := int32(binary.LittleEndian.Uint32(s.mmap[offi:]))
-	// kj := int32(binary.LittleEndian.Uint32(s.mmap[offj:]))
 	return ki < kj
 }
 func (s *mmapEntrySorter) Swap(i, j int) {
@@ -218,7 +224,7 @@ func OpenIndex(file *os.File) (*Index, error) {
 }
 
 func (idx *Index) Get(key int64) (uint32, bool) {
-	left, right := int32(0), int32(idx.count-1)
+	left, right := int64(0), int64(idx.count-1)
 
 	for left <= right {
 		mid := left + (right-left)/2

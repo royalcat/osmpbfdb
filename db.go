@@ -3,8 +3,12 @@ package osmpbfdb
 import (
 	"cmp"
 	"context"
+	"crypto/sha1"
 	"errors"
+	"fmt"
 	"io"
+	"os"
+	"path"
 	"slices"
 	"time"
 
@@ -58,6 +62,18 @@ type DB struct {
 	relationIndex *winindex.Index
 }
 
+const chunkSize = 64 * 1024
+
+func hashInput(r io.ReaderAt) (string, error) {
+	chunk := make([]byte, chunkSize)
+	n, err := r.ReadAt(chunk, 0)
+	if err != nil && err != io.EOF {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", sha1.Sum(chunk[:n])), nil
+}
+
 // newDecoder returns a new decoder that reads from r.
 func OpenDB(ctx context.Context, r io.ReaderAt, indexDir string) (*DB, error) {
 	cache, err := lru.New2Q[int64, []osm.Object](1024)
@@ -70,10 +86,35 @@ func OpenDB(ctx context.Context, r io.ReaderAt, indexDir string) (*DB, error) {
 		cache: cache,
 	}
 
-	err = db.buildIndex(indexDir)
+	dbHash, err := hashInput(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to hash input: %w", err)
 	}
+
+	indexDir = path.Join(indexDir, dbHash)
+	completionFile := path.Join(indexDir, ".complete")
+
+	stat, err := os.Stat(completionFile)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("failed to stat index directory: %w", err)
+	}
+	if stat == nil {
+		err := os.MkdirAll(indexDir, os.ModePerm)
+		if err != nil {
+			return nil, err
+		}
+
+		err = db.buildIndex(indexDir)
+		if err != nil {
+			return nil, err
+		}
+
+		err = os.WriteFile(completionFile, []byte{}, os.ModePerm)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write completion file: %w", err)
+		}
+	}
+
 	return db, nil
 }
 
