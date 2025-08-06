@@ -267,62 +267,41 @@ func TestDB(t *testing.T) {
 		t.Fatalf("expected %v, got %v", en.ID, enNode.ID)
 	}
 
-	// TODO FIX TESTS
+	const testCout = 10
 
-	// const testCout = 10
+	for range testCout {
+		randomKey := randomKey(d.nodeIndex)
+		obj, err := d.GetNode(randomKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if obj.ID != randomKey {
+			t.Fatalf("expected %v, got %v", randomKey, obj.ID)
+		}
+	}
 
-	// for range testCout {
-	// 	randomRef := randomRef(d.nodeIndex)
-	// 	featID, err := osm.TypeNode.FeatureID(randomRef)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	nodeID := featID.NodeID()
+	for range testCout {
+		randomKey := randomKey(d.wayIndex)
+		obj, err := d.GetWay(randomKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if obj.ID != randomKey {
+			t.Fatalf("expected %v, got %v", randomKey, obj.ID)
+		}
+	}
 
-	// 	obj, err := d.GetNode(nodeID)
-	// 	if err != nil {
-	// 		t.Fatal(fmt.Errorf("failed to get node %d: %w", nodeID, err))
-	// 	}
-	// 	if obj.ID != nodeID {
-	// 		t.Fatalf("expected %v, got %v", nodeID, obj.ID)
-	// 	}
-	// }
+	for range testCout {
+		randomKey := randomKey(d.relationIndex)
+		obj, err := d.GetRelation(randomKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if obj.ID != randomKey {
+			t.Fatalf("expected %v, got %v", randomKey, obj.ID)
+		}
+	}
 
-	// for range testCout {
-	// 	randomRef := randomRef(d.nodeIndex)
-	// 	featID, err := osm.TypeWay.FeatureID(randomRef)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	wayID := featID.WayID()
-
-	// 	obj, err := d.GetWay(wayID)
-	// 	if err != nil {
-	// 		t.Fatal(fmt.Errorf("failed to get way %d: %w", wayID, err))
-	// 	}
-	// 	if obj.ID != wayID {
-	// 		t.Fatalf("expected %v, got %v", wayID, obj.ID)
-	// 	}
-	// }
-
-	// for range testCout {
-	// 	randomRef := randomRef(d.nodeIndex)
-	// 	featID, err := osm.TypeRelation.FeatureID(randomRef)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	relID := featID.RelationID()
-
-	// 	obj, err := d.GetRelation(relID)
-	// 	if err != nil {
-	// 		t.Fatal(fmt.Errorf("failed to get relation %d: %w", relID, err))
-	// 	}
-	// 	if obj.ID != relID {
-	// 		t.Fatalf("expected %v, got %v", relID, obj.ID)
-	// 	}
-	// }
-
-	runtime.GC()
 	PrintMemUsage()
 }
 
@@ -386,26 +365,21 @@ func BenchmarkGet(b *testing.B) {
 	}
 
 	for b.Loop() {
-		randomRef := randomRef(d.nodeIndex)
-		featID, err := osm.TypeNode.FeatureID(randomRef)
-		if err != nil {
-			b.Fatal(err)
-		}
-		nodeID := featID.NodeID()
+		randomKey := randomKey(d.nodeIndex)
 
-		obj, err := d.GetNode(featID.NodeID())
+		obj, err := d.GetNode(randomKey)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		if obj.ID != nodeID {
-			b.Fatalf("expected %v, got %v", nodeID, obj.ObjectID())
+		if obj.ID != randomKey {
+			b.Fatalf("expected %v, got %v", randomKey, obj.ObjectID())
 		}
 	}
 
 }
 
-func randomRef(index *winindex.Index) int64 {
+func randomKey[K ~int64](index *winindex.Index[K]) K {
 	windowCount := index.WindowCount()
 	if windowCount == 0 {
 		return 0 // No windows, return zero value
@@ -413,7 +387,7 @@ func randomRef(index *winindex.Index) int64 {
 
 	randomWindowIndex := rand.Intn(int(windowCount))
 
-	var randomWindow winindex.Window
+	var randomWindow winindex.Window[K]
 	var i int
 	for window := range index.RangeWindows() {
 		if i == randomWindowIndex {
@@ -423,13 +397,9 @@ func randomRef(index *winindex.Index) int64 {
 		i++
 	}
 
-	// var key int64
+	if randomWindow.MinKey == randomWindow.MaxKey {
+		return randomWindow.MinKey
+	}
 
-	// if randomWindow.MinKey == randomWindow.MaxKey {
-	// 	key = randomWindow.MinKey
-	// } else {
-	// 	key = randomWindow.MinKey + int64(rand.Intn(int(randomWindow.MaxKey-randomWindow.MinKey)))
-	// }
-
-	return unCompactRef(randomWindow.MinKey)
+	return randomWindow.MinKey + K(rand.Intn(int(randomWindow.MaxKey-randomWindow.MinKey)))
 }

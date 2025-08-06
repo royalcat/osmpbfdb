@@ -58,9 +58,9 @@ type DB struct {
 	cache     *lru.TwoQueueCache[int64, []osm.Object]
 	readGroup singleflight.Group[int64, []osm.Object]
 
-	nodeIndex     *winindex.Index
-	wayIndex      *winindex.Index
-	relationIndex *winindex.Index
+	nodeIndex     *winindex.Index[osm.NodeID]
+	wayIndex      *winindex.Index[osm.WayID]
+	relationIndex *winindex.Index[osm.RelationID]
 
 	log *slog.Logger
 }
@@ -176,7 +176,7 @@ func findInObjects[objType osm.Object](objects []osm.Object, id osm.FeatureID) (
 }
 
 func (db *DB) GetNode(id osm.NodeID) (*osm.Node, error) {
-	offset, ok := db.nodeIndex.Get(compactRef(id.FeatureID().Ref()))
+	offset, ok := db.nodeIndex.Get(id)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -190,7 +190,7 @@ func (db *DB) GetNode(id osm.NodeID) (*osm.Node, error) {
 }
 
 func (db *DB) GetWay(id osm.WayID) (*osm.Way, error) {
-	offset, ok := db.wayIndex.Get(compactRef(id.FeatureID().Ref()))
+	offset, ok := db.wayIndex.Get(id)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -204,7 +204,7 @@ func (db *DB) GetWay(id osm.WayID) (*osm.Way, error) {
 }
 
 func (db *DB) GetRelation(id osm.RelationID) (*osm.Relation, error) {
-	offset, ok := db.relationIndex.Get(compactRef(id.FeatureID().Ref()))
+	offset, ok := db.relationIndex.Get(id)
 	if !ok {
 		return nil, ErrNotFound
 	}

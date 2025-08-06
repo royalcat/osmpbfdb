@@ -8,6 +8,11 @@ import (
 	"github.com/royalcat/osmpbfdb/internal/winindex"
 )
 
+const (
+	maxInt48 = 140737488355327
+	minInt48 = -140737488355327
+)
+
 func TestIndex(t *testing.T) {
 	file, err := os.CreateTemp("", "index_test")
 	if err != nil {
@@ -34,7 +39,7 @@ func TestIndex(t *testing.T) {
 		{maxInt48, 123},
 	}
 
-	b, err := winindex.OpenIndexBuilder(file)
+	b, err := winindex.OpenIndexBuilder[int64](file)
 	if err != nil {
 		t.Fatalf("failed to open index builder: %v", err)
 	}
@@ -73,10 +78,10 @@ func TestIndex(t *testing.T) {
 	// }
 }
 
-func expectInIndex(index *winindex.Index, k int64, v uint32) error {
+func expectInIndex[K ~int64](index *winindex.Index[K], k K, v uint32) error {
 	res, ok := index.Get(k)
 	if !ok {
-		return fmt.Errorf("not found %v", k)
+		return fmt.Errorf("expected to find %v", k)
 	}
 	if res != v {
 		return fmt.Errorf("expected %v, got %v", v, res)
