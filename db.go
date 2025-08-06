@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"slices"
@@ -60,6 +61,8 @@ type DB struct {
 	nodeIndex     *winindex.Index
 	wayIndex      *winindex.Index
 	relationIndex *winindex.Index
+
+	log *slog.Logger
 }
 
 const chunkSize = 64 * 1024
@@ -84,6 +87,7 @@ func OpenDB(ctx context.Context, r io.ReaderAt, indexDir string) (*DB, error) {
 	db := &DB{
 		r:     r,
 		cache: cache,
+		log:   slog.Default(), // TODO
 	}
 
 	dbHash, err := hashInput(r)

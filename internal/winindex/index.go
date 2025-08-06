@@ -57,13 +57,8 @@ func (r *Window) UnmarshalBinary(data []byte) error {
 		return errors.New("invalid length for Window binary representation")
 	}
 
-	// Unmarshal Min
 	r.MinKey = int48ToInt64(binary.BigEndian.Uint64(append([]byte{0x00, 0x00}, data[0:6]...)))
-
-	// Unmarshal Max
 	r.MaxKey = int48ToInt64(binary.BigEndian.Uint64(append([]byte{0x00, 0x00}, data[6:12]...)))
-
-	// Unmarshal Value
 	r.Value = binary.BigEndian.Uint32(data[12:16])
 
 	return nil

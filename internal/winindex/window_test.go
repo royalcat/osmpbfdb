@@ -35,6 +35,10 @@ func TestWindowMarshalUnmarshal(t *testing.T) {
 			t.Fatalf("failed to marshal window: %v", err)
 		}
 
+		if len(data) != 16 {
+			t.Errorf("expected data length to be 16, got %d for window %+v", len(data), window)
+		}
+
 		var unmarshalled winindex.Window
 		err = unmarshalled.UnmarshalBinary(data)
 		if err != nil {

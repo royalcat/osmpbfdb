@@ -24,13 +24,13 @@ func unCompactRef(ref int64) int64 {
 }
 
 // buildIndex decoding process using n goroutines.
-func (dec *DB) buildIndex(indexDir string) error {
+func (db *DB) buildIndex(indexDir string) error {
 	bytesRead := int64(0)
 
 	// read OSMHeader
 	// NOTE: if the first block is not a header, i.e. after a restart we need
 	// to decode that block. It gets pushed on the first "input" below.
-	n, osmHeaderBlobHeader, osmHeaderBlob, err := dec.readFileBlock(0)
+	n, osmHeaderBlobHeader, osmHeaderBlob, err := db.readFileBlock(0)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (dec *DB) buildIndex(indexDir string) error {
 		defer close(blobChan)
 
 		for {
-			n, blobHeader, blob, err := dec.readFileBlock(bytesRead)
+			n, blobHeader, blob, err := db.readFileBlock(bytesRead)
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -112,7 +112,7 @@ func (dec *DB) buildIndex(indexDir string) error {
 		for blobAt := range blobChan {
 			objects, err := dd.Decode(blobAt.blob)
 			if err != nil {
-				slog.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				db.log.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
 				return err
 			}
 
@@ -137,16 +137,18 @@ func (dec *DB) buildIndex(indexDir string) error {
 		return fmt.Errorf("error during index building: %w", err)
 	}
 
+	db.log.Info("Finished reading file blocks", slog.Int64("bytes_read", bytesRead))
+
 	// dec.objectIndex = objectIndexBuilder.Build()
-	dec.nodeIndex, err = nodeIndexBuilder.Build()
+	db.nodeIndex, err = nodeIndexBuilder.Build()
 	if err != nil {
 		return fmt.Errorf("failed to build node index: %w", err)
 	}
-	dec.wayIndex, err = wayIndexBuilder.Build()
+	db.wayIndex, err = wayIndexBuilder.Build()
 	if err != nil {
 		return fmt.Errorf("failed to build way index: %w", err)
 	}
-	dec.relationIndex, err = relationIndexBuilder.Build()
+	db.relationIndex, err = relationIndexBuilder.Build()
 	if err != nil {
 		return fmt.Errorf("failed to build relation index: %w", err)
 	}
