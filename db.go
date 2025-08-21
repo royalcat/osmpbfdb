@@ -13,16 +13,18 @@ import (
 	"slices"
 	"time"
 
+	"github.com/dgraph-io/ristretto/v2"
 	"github.com/goware/singleflight"
-	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/paulmach/osm"
+	"github.com/pbnjay/memory"
 	"github.com/royalcat/osmpbfdb/internal/winindex"
+	"github.com/royalcat/osmpbfdb/osmproto"
 )
 
 const (
 	sizeBufSize       = 4
-	maxBlobHeaderSize = 64 * 1024
-	maxBlobSize       = 32 * 1024 * 1024
+	maxBlobHeaderSize = 64 * 1024        // 64KB
+	maxBlobSize       = 32 * 1024 * 1024 // 32MB
 )
 
 var (
@@ -55,7 +57,7 @@ type Header struct {
 type DB struct {
 	r io.ReaderAt
 
-	cache     *lru.TwoQueueCache[int64, []osm.Object]
+	readCache *ristretto.Cache[int64, []osm.Object]
 	readGroup singleflight.Group[int64, []osm.Object]
 
 	nodeIndex     *winindex.Index[osm.NodeID]
@@ -77,17 +79,68 @@ func hashInput(r io.ReaderAt) (string, error) {
 	return fmt.Sprintf("%x", sha1.Sum(chunk[:n])), nil
 }
 
+const minReadCacheSize = maxBlobSize * 5 // around 160MB
+
+// Config of different database knobs
+// Zero value can be used for default configuration.
+type Config struct {
+	IndexDir            string // default is "./osm-index"
+	MaxReadCacheSize    int64  // in bytes, default is 2GB
+	CacheSizeAutoAdjust bool   // if true, will adjust the cache size based on available memory
+}
+
+func (c *Config) SetDefaults() {
+	if c.IndexDir == "" {
+		c.IndexDir = "./osm-index"
+	}
+	if c.MaxReadCacheSize <= 0 {
+		c.MaxReadCacheSize = 1 << 30 // 2GB
+	}
+}
+
 // newDecoder returns a new decoder that reads from r.
-func OpenDB(ctx context.Context, r io.ReaderAt, indexDir string) (*DB, error) {
-	cache, err := lru.New2Q[int64, []osm.Object](1024)
+func OpenDB(ctx context.Context, r io.ReaderAt, config Config) (*DB, error) {
+	config.SetDefaults()
+	cache, err := ristretto.NewCache(&ristretto.Config[int64, []osm.Object]{
+		NumCounters: 1e7,
+		BufferItems: 64,
+		MaxCost:     config.MaxReadCacheSize,
+		Cost: func(_ []osm.Object) int64 {
+			return maxBlobSize * blobSizeAmplifier
+		},
+		// Metrics: true,
+	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create read cache: %w", err)
+	}
+
+	if config.CacheSizeAutoAdjust {
+		go func(maxReadCacheSize int64) {
+			for range time.Tick(15 * time.Second) {
+				freeMem := memory.FreeMemory()
+				if freeMem == 0 {
+					continue
+				}
+				currentMaxCost := cache.MaxCost()
+
+				// TODO make sense to make size changes configurable
+				if freeMem*2 < uint64(currentMaxCost) {
+					suggestedNewCost := currentMaxCost - currentMaxCost/4
+					cache.UpdateMaxCost(max(suggestedNewCost, minReadCacheSize))
+					continue
+				} else if freeMem > uint64(maxReadCacheSize)*2 && currentMaxCost < maxReadCacheSize {
+					suggestedNewCost := currentMaxCost + (maxReadCacheSize-currentMaxCost)/2
+					cache.UpdateMaxCost(min(maxReadCacheSize, suggestedNewCost))
+					continue
+				}
+			}
+		}(config.MaxReadCacheSize)
 	}
 
 	db := &DB{
-		r:     r,
-		cache: cache,
-		log:   slog.Default(), // TODO
+		r:         r,
+		readCache: cache,
+		log:       slog.Default(), // TODO
 	}
 
 	dbHash, err := hashInput(r)
@@ -95,7 +148,7 @@ func OpenDB(ctx context.Context, r io.ReaderAt, indexDir string) (*DB, error) {
 		return nil, fmt.Errorf("failed to hash input: %w", err)
 	}
 
-	indexDir = path.Join(indexDir, dbHash)
+	indexDir := path.Join(config.IndexDir, dbHash)
 	completionFile := path.Join(indexDir, ".complete")
 
 	stat, err := os.Stat(completionFile)
@@ -116,6 +169,33 @@ func OpenDB(ctx context.Context, r io.ReaderAt, indexDir string) (*DB, error) {
 		err = os.WriteFile(completionFile, []byte{}, os.ModePerm)
 		if err != nil {
 			return nil, fmt.Errorf("failed to write completion file: %w", err)
+		}
+	} else {
+		nodeIndexFile, err := os.OpenFile(path.Join(indexDir, "nodes"), os.O_RDONLY, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open node index file: %w", err)
+		}
+		db.nodeIndex, err = winindex.OpenIndex[osm.NodeID](nodeIndexFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open node index file: %w", err)
+		}
+
+		waysIndexFile, err := os.OpenFile(path.Join(indexDir, "ways"), os.O_RDONLY, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open node index file: %w", err)
+		}
+		db.wayIndex, err = winindex.OpenIndex[osm.WayID](waysIndexFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open node index file: %w", err)
+		}
+
+		relationsIndexFile, err := os.OpenFile(path.Join(indexDir, "relations"), os.O_RDONLY, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open node index file: %w", err)
+		}
+		db.relationIndex, err = winindex.OpenIndex[osm.RelationID](relationsIndexFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open node index file: %w", err)
 		}
 	}
 
@@ -181,7 +261,7 @@ func (db *DB) GetNode(id osm.NodeID) (*osm.Node, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(int64(offset))
+	objects, err := db.readObjects(int64(offset), true)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +275,7 @@ func (db *DB) GetWay(id osm.WayID) (*osm.Way, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(int64(offset))
+	objects, err := db.readObjects(int64(offset), true)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +289,7 @@ func (db *DB) GetRelation(id osm.RelationID) (*osm.Relation, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(int64(offset))
+	objects, err := db.readObjects(int64(offset), true)
 	if err != nil {
 		return nil, err
 	}
@@ -217,15 +297,29 @@ func (db *DB) GetRelation(id osm.RelationID) (*osm.Relation, error) {
 	return findInObjects[*osm.Relation](objects, id.FeatureID())
 }
 
+func (db *DB) GetObject(id osm.FeatureID) (osm.Object, error) {
+	switch id.Type() {
+	case osm.TypeNode:
+		return db.GetNode(id.NodeID())
+	case osm.TypeWay:
+		return db.GetWay(id.WayID())
+	case osm.TypeRelation:
+		return db.GetRelation(id.RelationID())
+	default:
+		return nil, fmt.Errorf("unknown object type: %s", id.Type())
+	}
+}
+
 var dataDecoderPool = newSyncPool[*dataDecoder](func() *dataDecoder { return &dataDecoder{} })
 
-func (db *DB) readObjects(offset int64) ([]osm.Object, error) {
-	if out, ok := db.cache.Get(offset); ok {
+func (db *DB) readObjects(offset int64, addToCache bool) ([]osm.Object, error) {
+
+	if out, ok := db.readCache.Get(offset); ok {
 		return out, nil
 	}
 
 	out, err, _ := db.readGroup.Do(offset, func() ([]osm.Object, error) {
-		if objects, ok := db.cache.Get(offset); ok {
+		if objects, ok := db.readCache.Get(offset); ok {
 			return objects, nil
 		}
 
@@ -245,10 +339,29 @@ func (db *DB) readObjects(offset int64) ([]osm.Object, error) {
 		slices.SortFunc(objects, func(a, b osm.Object) int {
 			return cmp.Compare(featureID(a.ObjectID()), featureID(b.ObjectID()))
 		})
+		objects = slices.Clip(objects)
 
-		db.cache.Add(offset, slices.Clone(objects))
+		if addToCache {
+			db.readCache.Set(offset, slices.Clone(objects), costFromBlob(blob))
+		}
 
 		return objects, nil
 	})
 	return out, err
+}
+
+// data actually weighs more in memory than it does on disk, so we need to allocate more memory for it
+const blobSizeAmplifier = 16
+
+func costFromBlob(blob *osmproto.Blob) int64 {
+	if blob == nil {
+		return 0
+	}
+	if blob.GetRawSize() != 0 {
+		return int64(blob.GetRawSize()) * blobSizeAmplifier
+	}
+	if blob.GetRaw() != nil {
+		return int64(len(blob.GetRaw())) * blobSizeAmplifier
+	}
+	return maxBlobSize * blobSizeAmplifier
 }

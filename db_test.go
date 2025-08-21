@@ -232,8 +232,10 @@ func TestDB(t *testing.T) {
 			t.Fatalf("failed to remove temp index dir: %v", err)
 		}
 	}()
-
-	d, err := OpenDB(context.Background(), f, indexDir)
+	cfg := Config{
+		IndexDir: indexDir,
+	}
+	d, err := OpenDB(context.Background(), f, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,7 +356,10 @@ func BenchmarkGet(b *testing.B) {
 		}
 	}()
 
-	d, err := OpenDB(context.Background(), f, indexDir)
+	cfg := Config{
+		IndexDir: indexDir,
+	}
+	d, err := OpenDB(context.Background(), f, cfg)
 	if err != nil {
 		b.Fatal(err)
 	}

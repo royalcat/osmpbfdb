@@ -4,73 +4,56 @@ import (
 	"iter"
 
 	"github.com/paulmach/osm"
+	"github.com/royalcat/osmpbfdb/internal/winindex"
 )
 
-func (db *DB) IterRelations() iter.Seq2[*osm.Relation, error] {
-	return func(yield func(*osm.Relation, error) bool) {
-		for window := range db.relationIndex.RangeWindows() {
-			objects, err := db.readObjects(int64(window.Value))
-			if err != nil {
-				if !yield(nil, err) {
+func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) iter.Seq2[T, error] {
+	type chunk struct {
+		Objs []osm.Object
+		Err  error
+	}
+
+	return func(yield func(T, error) bool) {
+		// this really just to prepare next chunk before it's needed, so buffer is big enough to hold a few chunks
+		chunkChan := make(chan chunk, 5)
+
+		go func() {
+			defer close(chunkChan)
+			for window := range index.RangeWindows() {
+				objects, err := db.readObjects(int64(window.Value), true)
+				chunkChan <- chunk{Objs: objects, Err: err}
+			}
+		}()
+
+		for buffer := range chunkChan {
+			if buffer.Err != nil {
+				var zero T
+				if !yield(zero, buffer.Err) {
 					return
 				}
 				continue
 			}
 
-			for _, obj := range objects {
-				if rel, ok := obj.(*osm.Relation); ok {
-					if !yield(rel, nil) {
+			for _, obj := range buffer.Objs {
+				if objT, ok := obj.(T); ok {
+					if !yield(objT, nil) {
 						return
 					}
 				}
 			}
-
 		}
+
 	}
+}
+
+func (db *DB) IterRelations() iter.Seq2[*osm.Relation, error] {
+	return iterForType[*osm.Relation](db, db.relationIndex)
 }
 
 func (db *DB) IterNodes() iter.Seq2[*osm.Node, error] {
-	return func(yield func(*osm.Node, error) bool) {
-		for window := range db.nodeIndex.RangeWindows() {
-			objects, err := db.readObjects(int64(window.Value))
-			if err != nil {
-				if !yield(nil, err) {
-					return
-				}
-				continue
-			}
-
-			for _, obj := range objects {
-				if node, ok := obj.(*osm.Node); ok {
-					if !yield(node, nil) {
-						return
-					}
-				}
-			}
-
-		}
-	}
+	return iterForType[*osm.Node](db, db.nodeIndex)
 }
 
 func (db *DB) IterWays() iter.Seq2[*osm.Way, error] {
-	return func(yield func(*osm.Way, error) bool) {
-		for window := range db.wayIndex.RangeWindows() {
-			objects, err := db.readObjects(int64(window.Value))
-			if err != nil {
-				if !yield(nil, err) {
-					return
-				}
-				continue
-			}
-
-			for _, obj := range objects {
-				if way, ok := obj.(*osm.Way); ok {
-					if !yield(way, nil) {
-						return
-					}
-				}
-			}
-
-		}
-	}
+	return iterForType[*osm.Way](db, db.wayIndex)
 }
