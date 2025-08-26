@@ -1,4 +1,4 @@
-package osmpbfdb
+package osmblob
 
 import (
 	"bytes"
@@ -12,12 +12,41 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var (
-	headerBufPool = newSyncPool[[]byte](func() []byte { return make([]byte, maxBlobHeaderSize) })
-	blobBufPool   = newSyncPool[[]byte](func() []byte { return make([]byte, maxBlobSize) })
+const (
+	sizeBufSize       = 4
+	MaxBlobHeaderSize = 64 * 1024        // 64KB
+	MaxBlobSize       = 32 * 1024 * 1024 // 32MB
 )
 
-func (dec *DB) readFileBlock(off int64) (int64, *osmproto.BlobHeader, *osmproto.Blob, error) {
+var (
+	parseCapabilities = map[string]bool{
+		"OsmSchema-V0.6":        true,
+		"DenseNodes":            true,
+		"HistoricalInformation": true,
+	}
+)
+
+// osm block data types
+const (
+	OsmHeaderType = "OSMHeader"
+	OsmDataType   = "OSMData"
+)
+
+var (
+	headerBufPool   = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobHeaderSize) })
+	blobBufPool     = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobSize) })
+	dataDecoderPool = newSyncPool[*DataDecoder](func() *DataDecoder { return &DataDecoder{} })
+)
+
+type BlobReader struct {
+	r io.ReaderAt
+}
+
+func NewBlobReader(r io.ReaderAt) *BlobReader {
+	return &BlobReader{r: r}
+}
+
+func (dec *BlobReader) ReadFileBlock(off int64) (int64, *osmproto.BlobHeader, *osmproto.Blob, error) {
 	headerBuf := headerBufPool.Get()
 	defer headerBufPool.Put(headerBuf)
 	blobBuf := blobBufPool.Get()
@@ -45,7 +74,7 @@ func (dec *DB) readFileBlock(off int64) (int64, *osmproto.BlobHeader, *osmproto.
 	return bytesRead, blobHeader, blob, nil
 }
 
-func (dec *DB) readBlobHeaderSize(off int64) (uint32, error) {
+func (dec *BlobReader) readBlobHeaderSize(off int64) (uint32, error) {
 	var buf [sizeBufSize]byte
 
 	n, err := dec.r.ReadAt(buf[:], off)
@@ -58,13 +87,13 @@ func (dec *DB) readBlobHeaderSize(off int64) (uint32, error) {
 
 	// size := binary.BigEndian.Uint32(buf[:])
 	size := uint32(buf[3]) | uint32(buf[2])<<8 | uint32(buf[1])<<16 | uint32(buf[0])<<24
-	if size >= maxBlobHeaderSize {
+	if size >= MaxBlobHeaderSize {
 		return 0, errors.New("blobHeader size >= 64Kb")
 	}
 	return size, nil
 }
 
-func (dec *DB) readBlobHeader(buf []byte, off int64) (*osmproto.BlobHeader, error) {
+func (dec *BlobReader) readBlobHeader(buf []byte, off int64) (*osmproto.BlobHeader, error) {
 	n, err := dec.r.ReadAt(buf, off)
 	if err != nil {
 		return nil, err
@@ -78,13 +107,13 @@ func (dec *DB) readBlobHeader(buf []byte, off int64) (*osmproto.BlobHeader, erro
 		return nil, err
 	}
 
-	if blobHeader.GetDatasize() >= maxBlobSize {
+	if blobHeader.GetDatasize() >= MaxBlobSize {
 		return nil, errors.New("blob size >= 32Mb")
 	}
 	return blobHeader, nil
 }
 
-func (dec *DB) readBlob(buf []byte, off int64) (*osmproto.Blob, error) {
+func (dec *BlobReader) readBlob(buf []byte, off int64) (*osmproto.Blob, error) {
 	n, err := dec.r.ReadAt(buf, off)
 	if err != nil {
 		return nil, err
@@ -133,7 +162,19 @@ func getData(blob *osmproto.Blob, data []byte) ([]byte, error) {
 	}
 }
 
-func decodeOSMHeader(blob *osmproto.Blob) (*Header, error) {
+// Header contains the contents of the header in the pbf file.
+type Header struct {
+	Bounds               *osm.Bounds
+	RequiredFeatures     []string
+	OptionalFeatures     []string
+	WritingProgram       string
+	Source               string
+	ReplicationTimestamp time.Time
+	ReplicationSeqNum    uint64
+	ReplicationBaseURL   string
+}
+
+func DecodeOSMHeader(blob *osmproto.Blob) (*Header, error) {
 	data, err := getData(blob, nil)
 	if err != nil {
 		return nil, err
@@ -178,4 +219,20 @@ func decodeOSMHeader(blob *osmproto.Blob) (*Header, error) {
 	}
 
 	return header, nil
+}
+
+// data actually weighs more in memory than it does on disk, so we need to allocate more memory for it
+const blobSizeAmplifier = 16
+
+func costFromBlob(blob *osmproto.Blob) int64 {
+	if blob == nil {
+		return 0
+	}
+	if blob.GetRawSize() != 0 {
+		return int64(blob.GetRawSize()) * blobSizeAmplifier
+	}
+	if blob.GetRaw() != nil {
+		return int64(len(blob.GetRaw())) * blobSizeAmplifier
+	}
+	return MaxBlobSize * blobSizeAmplifier
 }

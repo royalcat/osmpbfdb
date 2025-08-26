@@ -20,7 +20,7 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) ite
 		go func() {
 			defer close(chunkChan)
 			for window := range index.RangeWindows() {
-				objects, err := db.readObjects(int64(window.Value), true)
+				objects, err := db.readObjects(window.Value)
 				chunkChan <- chunk{Objs: objects, Err: err}
 			}
 		}()
@@ -47,13 +47,13 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) ite
 }
 
 func (db *DB) IterRelations() iter.Seq2[*osm.Relation, error] {
-	return iterForType[*osm.Relation](db, db.relationIndex)
+	return iterForType[*osm.Relation](db, db.indexes.RelationIndex)
 }
 
 func (db *DB) IterNodes() iter.Seq2[*osm.Node, error] {
-	return iterForType[*osm.Node](db, db.nodeIndex)
+	return iterForType[*osm.Node](db, db.indexes.NodeIndex)
 }
 
 func (db *DB) IterWays() iter.Seq2[*osm.Way, error] {
-	return iterForType[*osm.Way](db, db.wayIndex)
+	return iterForType[*osm.Way](db, db.indexes.WayIndex)
 }

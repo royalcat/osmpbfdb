@@ -1,7 +1,7 @@
 //go:build !cgo
 // +build !cgo
 
-package osmpbfdb
+package osmblob
 
 import (
 	"bytes"

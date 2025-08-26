@@ -9,57 +9,60 @@ import (
 	"path"
 
 	"github.com/paulmach/osm"
+	"github.com/royalcat/osmpbfdb/internal/osmblob"
 	"github.com/royalcat/osmpbfdb/internal/winindex"
 	"github.com/royalcat/osmpbfdb/osmproto"
 	"golang.org/x/sync/errgroup"
 )
 
 // buildIndex decoding process using n goroutines.
-func (db *DB) buildIndex(indexDir string) error {
+func buildIndex(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, error) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
 	bytesRead := int64(0)
 
 	// read OSMHeader
 	// NOTE: if the first block is not a header, i.e. after a restart we need
 	// to decode that block. It gets pushed on the first "input" below.
-	n, osmHeaderBlobHeader, osmHeaderBlob, err := db.readFileBlock(0)
+	n, osmHeaderBlobHeader, osmHeaderBlob, err := blobReader.ReadFileBlock(0)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	bytesRead += n
 
-	if osmHeaderBlobHeader.GetType() == osmHeaderType {
-		_, err := decodeOSMHeader(osmHeaderBlob)
+	if osmHeaderBlobHeader.GetType() == osmblob.OsmHeaderType {
+		_, err := osmblob.DecodeOSMHeader(osmHeaderBlob)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	dd := &dataDecoder{}
+	dd := &osmblob.DataDecoder{}
 
 	// objectIndexBuilder := indexBuilder[osm.ObjectID, int64]{}
 	nodeIndexFile, err := os.OpenFile(path.Join(indexDir, "nodes"), os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to open node index file: %w", err)
+		return nil, fmt.Errorf("failed to open node index file: %w", err)
 	}
 	nodeIndexBuilder, err := winindex.OpenIndexBuilder[osm.NodeID](nodeIndexFile)
 	if err != nil {
-		return fmt.Errorf("failed to open node index builder: %w", err)
+		return nil, fmt.Errorf("failed to open node index builder: %w", err)
 	}
 	wayIndexFile, err := os.OpenFile(path.Join(indexDir, "ways"), os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to open way index file: %w", err)
+		return nil, fmt.Errorf("failed to open way index file: %w", err)
 	}
 	wayIndexBuilder, err := winindex.OpenIndexBuilder[osm.WayID](wayIndexFile)
 	if err != nil {
-		return fmt.Errorf("failed to open way index builder: %w", err)
+		return nil, fmt.Errorf("failed to open way index builder: %w", err)
 	}
 	relationIndexFile, err := os.OpenFile(path.Join(indexDir, "relations"), os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to open relation index file: %w", err)
+		return nil, fmt.Errorf("failed to open relation index file: %w", err)
 	}
 	relationIndexBuilder, err := winindex.OpenIndexBuilder[osm.RelationID](relationIndexFile)
 	if err != nil {
-		return fmt.Errorf("failed to open relation index builder: %w", err)
+		return nil, fmt.Errorf("failed to open relation index builder: %w", err)
 	}
 
 	var group errgroup.Group
@@ -74,7 +77,7 @@ func (db *DB) buildIndex(indexDir string) error {
 		defer close(blobChan)
 
 		for {
-			n, blobHeader, blob, err := db.readFileBlock(bytesRead)
+			n, blobHeader, blob, err := blobReader.ReadFileBlock(bytesRead)
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -83,7 +86,7 @@ func (db *DB) buildIndex(indexDir string) error {
 				return err
 			}
 
-			if blobHeader.GetType() != osmDataType {
+			if blobHeader.GetType() != osmblob.OsmDataType {
 				return fmt.Errorf("unexpected fileblock of type %s", blobHeader.GetType())
 			}
 
@@ -103,8 +106,8 @@ func (db *DB) buildIndex(indexDir string) error {
 		for blobAt := range blobChan {
 			objects, err := dd.Decode(blobAt.blob)
 			if err != nil {
-				db.log.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-				return err
+				log.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				return nil
 			}
 
 			for _, obj := range objects {
@@ -125,24 +128,28 @@ func (db *DB) buildIndex(indexDir string) error {
 
 	err = group.Wait()
 	if err != nil {
-		return fmt.Errorf("error during index building: %w", err)
+		return nil, fmt.Errorf("error during index building: %w", err)
 	}
 
-	db.log.Info("Finished reading file blocks", slog.Int64("bytes_read", bytesRead))
+	log.Info("Finished reading file blocks", slog.Int64("bytes_read", bytesRead))
 
 	// dec.objectIndex = objectIndexBuilder.Build()
-	db.nodeIndex, err = nodeIndexBuilder.Build()
+	nodeIndex, err := nodeIndexBuilder.Build()
 	if err != nil {
-		return fmt.Errorf("failed to build node index: %w", err)
+		return nil, fmt.Errorf("failed to build node index: %w", err)
 	}
-	db.wayIndex, err = wayIndexBuilder.Build()
+	wayIndex, err := wayIndexBuilder.Build()
 	if err != nil {
-		return fmt.Errorf("failed to build way index: %w", err)
+		return nil, fmt.Errorf("failed to build way index: %w", err)
 	}
-	db.relationIndex, err = relationIndexBuilder.Build()
+	relationIndex, err := relationIndexBuilder.Build()
 	if err != nil {
-		return fmt.Errorf("failed to build relation index: %w", err)
+		return nil, fmt.Errorf("failed to build relation index: %w", err)
 	}
 
-	return nil
+	return &Indexes{
+		NodeIndex:     nodeIndex,
+		WayIndex:      wayIndex,
+		RelationIndex: relationIndex,
+	}, nil
 }

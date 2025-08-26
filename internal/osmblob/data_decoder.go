@@ -1,4 +1,4 @@
-package osmpbfdb
+package osmblob
 
 import (
 	"errors"
@@ -10,8 +10,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// dataDecoder is a decoder for Blob with OSMData (PrimitiveBlock).
-type dataDecoder struct {
+// DataDecoder is a decoder for Blob with OSMData (PrimitiveBlock).
+type DataDecoder struct {
 	data []byte
 	q    []osm.Object
 
@@ -46,7 +46,7 @@ type dataDecoder struct {
 	keyvals *protoscan.Iterator
 }
 
-func (dec *dataDecoder) Decode(blob *osmproto.Blob) ([]osm.Object, error) {
+func (dec *DataDecoder) Decode(blob *osmproto.Blob) ([]osm.Object, error) {
 	dec.q = make([]osm.Object, 0, 8000) // typical PrimitiveBlock contains 8k OSM entities
 
 	var err error
@@ -62,7 +62,7 @@ func (dec *dataDecoder) Decode(blob *osmproto.Blob) ([]osm.Object, error) {
 	return dec.q, nil
 }
 
-func (dec *dataDecoder) scanPrimitiveBlock(data []byte) error {
+func (dec *DataDecoder) scanPrimitiveBlock(data []byte) error {
 	msg := protoscan.New(data)
 
 	if dec.primitiveBlock == nil {
@@ -144,7 +144,7 @@ func (dec *dataDecoder) scanPrimitiveBlock(data []byte) error {
 	return msg.Err()
 }
 
-func (dec *dataDecoder) scanPrimitiveGroup(data []byte) error {
+func (dec *DataDecoder) scanPrimitiveGroup(data []byte) error {
 	msg := protoscan.New(data)
 
 	way := &osm.Way{Visible: true}
@@ -210,7 +210,7 @@ func (dec *dataDecoder) scanPrimitiveGroup(data []byte) error {
 	return msg.Err()
 }
 
-func (dec *dataDecoder) scanDenseNodes(data []byte) error {
+func (dec *DataDecoder) scanDenseNodes(data []byte) error {
 	var foundIds, foundInfo, foundLats, foundLons, foundKeyVals bool
 
 	msg := protoscan.New(data)
@@ -343,7 +343,7 @@ func (dec *dataDecoder) scanDenseNodes(data []byte) error {
 	return dec.extractDenseNodes()
 }
 
-func (dec *dataDecoder) extractDenseNodes() error {
+func (dec *DataDecoder) extractDenseNodes() error {
 	st := dec.primitiveBlock.GetStringtable().GetS()
 	granularity := int64(dec.primitiveBlock.GetGranularity())
 	dateGranularity := int64(dec.primitiveBlock.GetDateGranularity())
@@ -485,7 +485,7 @@ func (dec *dataDecoder) extractDenseNodes() error {
 	return nil
 }
 
-func (dec *dataDecoder) scanWays(data []byte, way *osm.Way) (*osm.Way, error) {
+func (dec *DataDecoder) scanWays(data []byte, way *osm.Way) (*osm.Way, error) {
 	st := dec.primitiveBlock.GetStringtable().GetS()
 	granularity := int64(dec.primitiveBlock.GetGranularity())
 	dateGranularity := int64(dec.primitiveBlock.GetDateGranularity())
@@ -693,7 +693,7 @@ func extractMembers(
 	return members, nil
 }
 
-func (dec *dataDecoder) scanRelations(data []byte, relation *osm.Relation) (*osm.Relation, error) {
+func (dec *DataDecoder) scanRelations(data []byte, relation *osm.Relation) (*osm.Relation, error) {
 	st := dec.primitiveBlock.GetStringtable().GetS()
 	dateGranularity := int64(dec.primitiveBlock.GetDateGranularity())
 

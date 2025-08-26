@@ -1,7 +1,6 @@
 package osmpbfdb
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"math"
@@ -235,7 +234,7 @@ func TestDB(t *testing.T) {
 	cfg := Config{
 		IndexDir: indexDir,
 	}
-	d, err := OpenDB(context.Background(), f, cfg)
+	d, err := OpenDB(f, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +271,7 @@ func TestDB(t *testing.T) {
 	const testCout = 10
 
 	for range testCout {
-		randomKey := randomKey(d.nodeIndex)
+		randomKey := randomKey(d.indexes.NodeIndex)
 		obj, err := d.GetNode(randomKey)
 		if err != nil {
 			t.Fatal(err)
@@ -283,7 +282,7 @@ func TestDB(t *testing.T) {
 	}
 
 	for range testCout {
-		randomKey := randomKey(d.wayIndex)
+		randomKey := randomKey(d.indexes.WayIndex)
 		obj, err := d.GetWay(randomKey)
 		if err != nil {
 			t.Fatal(err)
@@ -294,7 +293,7 @@ func TestDB(t *testing.T) {
 	}
 
 	for range testCout {
-		randomKey := randomKey(d.relationIndex)
+		randomKey := randomKey(d.indexes.RelationIndex)
 		obj, err := d.GetRelation(randomKey)
 		if err != nil {
 			t.Fatal(err)
@@ -359,7 +358,7 @@ func BenchmarkGet(b *testing.B) {
 	cfg := Config{
 		IndexDir: indexDir,
 	}
-	d, err := OpenDB(context.Background(), f, cfg)
+	d, err := OpenDB(f, cfg)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -370,7 +369,7 @@ func BenchmarkGet(b *testing.B) {
 	}
 
 	for b.Loop() {
-		randomKey := randomKey(d.nodeIndex)
+		randomKey := randomKey(d.indexes.NodeIndex)
 
 		obj, err := d.GetNode(randomKey)
 		if err != nil {

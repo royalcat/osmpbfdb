@@ -1,4 +1,4 @@
-package osmpbfdb
+package osmblob
 
 import (
 	"sync"
