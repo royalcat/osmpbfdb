@@ -67,6 +67,17 @@ func (db *MultiDB) GetRelation(id osm.RelationID) (*osm.Relation, error) {
 	return nil, ErrNotFound
 }
 
+func (db *MultiDB) GetObject(id osm.FeatureID) (osm.Object, error) {
+	for _, db := range db.dbs {
+		result, err := db.GetObject(id)
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		return result, err
+	}
+	return nil, ErrNotFound
+}
+
 // IterNodes implements OsmDB.
 func (db *MultiDB) IterNodes() iter.Seq2[*osm.Node, error] {
 	return func(yield func(*osm.Node, error) bool) {
@@ -104,4 +115,17 @@ func (db *MultiDB) IterWays() iter.Seq2[*osm.Way, error] {
 			}
 		}
 	}
+}
+
+func (db *MultiDB) Close() error {
+	errs := make([]error, 0, len(db.dbs))
+	for _, db := range db.dbs {
+		if err := db.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) == 0 {
+		return nil
+	}
+	return errors.Join(errs...)
 }
