@@ -32,7 +32,7 @@ func openIndexes(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, err
 
 		indexes, err = buildIndex(indexDir, blobReader)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to build index: %w", err)
 		}
 
 		err = os.WriteFile(completionFile, []byte{}, os.ModePerm)

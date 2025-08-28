@@ -1,7 +1,6 @@
 package winindex
 
 import (
-	"bufio"
 	"encoding/binary"
 	"fmt"
 	"iter"
@@ -54,7 +53,7 @@ func (b *IndexBuilder[K]) Add(k K, v uint32) error {
 		b.currentWindow.MaxKey = k
 		return nil
 	} else {
-		err := b.appendWindow()
+		err := b.writeWindow()
 		if err != nil {
 			return err
 		}
@@ -64,7 +63,7 @@ func (b *IndexBuilder[K]) Add(k K, v uint32) error {
 	}
 }
 
-func (b *IndexBuilder[K]) appendWindow() error {
+func (b *IndexBuilder[K]) writeWindow() error {
 	if b.currentWindow == nil {
 		return nil
 	}
@@ -74,16 +73,9 @@ func (b *IndexBuilder[K]) appendWindow() error {
 	binary.LittleEndian.PutUint64(data[8:], uint64(b.currentWindow.MaxKey))
 	binary.LittleEndian.PutUint32(data[16:], b.currentWindow.Value)
 
-	w := bufio.NewWriterSize(b.file, windowSize*1024)
-
-	_, err := w.Write(data)
+	_, err := b.file.Write(data)
 	if err != nil {
 		return fmt.Errorf("failed to write window: %w", err)
-	}
-
-	err = w.Flush()
-	if err != nil {
-		return fmt.Errorf("failed to flush buffer: %w", err)
 	}
 
 	b.currentWindow = nil
@@ -111,15 +103,10 @@ func (s *mmapEntrySorter) Swap(i, j int) {
 }
 
 func (b *IndexBuilder[K]) Build() (*Index[K], error) {
-	b.appendWindow()
+	b.writeWindow()
 	err := b.file.Sync()
 	if err != nil {
 		return nil, fmt.Errorf("failed to sync file: %w", err)
-	}
-
-	m, err := mmap.Map(b.file, mmap.RDWR, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to mmap file: %w", err)
 	}
 
 	stat, err := b.file.Stat()
@@ -127,15 +114,23 @@ func (b *IndexBuilder[K]) Build() (*Index[K], error) {
 		return nil, fmt.Errorf("failed to get file stats: %w", err)
 	}
 
-	count := int(stat.Size() / windowSize)
+	if stat.Size() != 0 {
+		m, err := mmap.Map(b.file, mmap.RDWR, 0)
+		if err != nil {
+			return nil, fmt.Errorf("failed to mmap file: %w", err)
+		}
+		defer m.Unmap()
 
-	sort.Sort(&mmapEntrySorter{m, count})
+		count := int(stat.Size() / windowSize)
+		sort.Sort(&mmapEntrySorter{m, count})
+	}
 
-	return &Index[K]{
-		file:  b.file,
-		mmap:  m,
-		count: int64(count),
-	}, nil
+	index, err := OpenIndex[K](b.file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open index: %w", err)
+	}
+
+	return index, nil
 }
 
 type Index[K ~int64] struct {
@@ -149,11 +144,14 @@ func OpenIndex[K ~int64](file *os.File) (*Index[K], error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file stats: %w", err)
 	}
-
-	mm, err := mmap.Map(file, mmap.RDONLY, 0)
-	if err != nil {
-		return nil, err
+	var mm mmap.MMap
+	if info.Size() != 0 {
+		mm, err = mmap.Map(file, mmap.RDONLY, 0)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return &Index[K]{
 		mmap:  mm,
 		count: info.Size() / windowSize,
@@ -161,6 +159,10 @@ func OpenIndex[K ~int64](file *os.File) (*Index[K], error) {
 }
 
 func (idx *Index[K]) Get(key K) (uint32, bool) {
+	if idx.count == 0 {
+		return 0, false
+	}
+
 	left, right := int64(0), idx.count-1
 
 	for left <= right {
@@ -201,5 +203,9 @@ func (idx *Index[K]) WindowCount() int64 {
 }
 
 func (idx *Index[K]) Close() error {
-	return idx.mmap.Unmap()
+	if idx.mmap != nil {
+		return idx.mmap.Unmap()
+	}
+
+	return nil
 }

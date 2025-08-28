@@ -40,7 +40,7 @@ func buildIndex(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, erro
 	dd := &osmblob.DataDecoder{}
 
 	// objectIndexBuilder := indexBuilder[osm.ObjectID, int64]{}
-	nodeIndexFile, err := os.OpenFile(path.Join(indexDir, "nodes"), os.O_CREATE|os.O_RDWR, 0644)
+	nodeIndexFile, err := os.OpenFile(path.Join(indexDir, "nodes"), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open node index file: %w", err)
 	}
@@ -48,7 +48,7 @@ func buildIndex(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to open node index builder: %w", err)
 	}
-	wayIndexFile, err := os.OpenFile(path.Join(indexDir, "ways"), os.O_CREATE|os.O_RDWR, 0644)
+	wayIndexFile, err := os.OpenFile(path.Join(indexDir, "ways"), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open way index file: %w", err)
 	}
@@ -56,7 +56,7 @@ func buildIndex(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to open way index builder: %w", err)
 	}
-	relationIndexFile, err := os.OpenFile(path.Join(indexDir, "relations"), os.O_CREATE|os.O_RDWR, 0644)
+	relationIndexFile, err := os.OpenFile(path.Join(indexDir, "relations"), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open relation index file: %w", err)
 	}
@@ -133,7 +133,6 @@ func buildIndex(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, erro
 
 	log.Info("Finished reading file blocks", slog.Int64("bytes_read", bytesRead))
 
-	// dec.objectIndex = objectIndexBuilder.Build()
 	nodeIndex, err := nodeIndexBuilder.Build()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build node index: %w", err)
