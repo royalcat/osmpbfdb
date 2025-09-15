@@ -47,6 +47,7 @@ type Config struct {
 	IndexDir            string // default is "./osm-index"
 	MaxReadCacheSize    int64  // in bytes, default is 2GB
 	CacheSizeAutoAdjust bool   // if true, will adjust the cache size based on available memory
+	Logger              *slog.Logger
 }
 
 func (c *Config) SetDefaults() {
@@ -55,6 +56,9 @@ func (c *Config) SetDefaults() {
 	}
 	if c.MaxReadCacheSize <= 0 {
 		c.MaxReadCacheSize = 1 << 30 // 2GB
+	}
+	if c.Logger == nil {
+		c.Logger = slog.Default()
 	}
 }
 
@@ -100,7 +104,7 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	db := &DB{
 		blobReader: osmblob.NewBlobReader(r),
 		readCache:  cache,
-		log:        slog.Default(), // TODO
+		log:        config.Logger,
 	}
 
 	dbHash, err := hashInput(r)
