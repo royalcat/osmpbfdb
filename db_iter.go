@@ -19,7 +19,13 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) ite
 
 		go func() {
 			defer close(chunkChan)
+			readenChunks := map[uint32]struct{}{}
 			for window := range index.RangeWindows() {
+				if _, ok := readenChunks[window.Value]; ok {
+					continue
+				}
+				readenChunks[window.Value] = struct{}{}
+
 				objects, err := db.readObjects(window.Value)
 				chunkChan <- chunk{Objs: objects, Err: err}
 			}
@@ -46,14 +52,34 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) ite
 	}
 }
 
+func countKeys[ID ~int64](index *winindex.Index[ID]) int64 {
+	var count int64
+	for window := range index.RangeWindows() {
+		count += int64(window.MaxKey) - int64(window.MinKey) + 1
+	}
+	return count
+}
+
+func (db *DB) CountRelations() int64 {
+	return countKeys(db.indexes.RelationIndex)
+}
+
 func (db *DB) IterRelations() iter.Seq2[*osm.Relation, error] {
 	return iterForType[*osm.Relation](db, db.indexes.RelationIndex)
 }
 
-func (db *DB) IterNodes() iter.Seq2[*osm.Node, error] {
-	return iterForType[*osm.Node](db, db.indexes.NodeIndex)
+func (db *DB) CountWays() int64 {
+	return countKeys(db.indexes.WayIndex)
 }
 
 func (db *DB) IterWays() iter.Seq2[*osm.Way, error] {
 	return iterForType[*osm.Way](db, db.indexes.WayIndex)
+}
+
+func (db *DB) CountNodes() int64 {
+	return countKeys(db.indexes.NodeIndex)
+}
+
+func (db *DB) IterNodes() iter.Seq2[*osm.Node, error] {
+	return iterForType[*osm.Node](db, db.indexes.NodeIndex)
 }
