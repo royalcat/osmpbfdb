@@ -19,6 +19,8 @@ import (
 func buildIndex(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, error) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
+	log.Info("Building indexes, it may take some time")
+
 	bytesRead := int64(0)
 
 	// read OSMHeader

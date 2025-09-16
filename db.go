@@ -72,6 +72,7 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 		Cost: func(_ []osm.Object) int64 {
 			return osmblob.MaxBlobSize * cacheBlobSizeAmplifier
 		},
+		Metrics: true,
 		// Metrics: true,
 	})
 	if err != nil {
@@ -100,6 +101,12 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 			}
 		}(config.MaxReadCacheSize)
 	}
+
+	go func() {
+		for range time.Tick(time.Minute) {
+			config.Logger.Debug("Cache stats", "ratio", cache.Metrics.Ratio())
+		}
+	}()
 
 	db := &DB{
 		blobReader: osmblob.NewBlobReader(r),

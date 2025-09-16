@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"iter"
+	"sync"
 
 	"github.com/paulmach/osm"
 )
@@ -14,13 +15,20 @@ type MultiDB struct {
 
 func OpenMultiDB(readers []io.ReaderAt, config Config) (*MultiDB, error) {
 	dbs := make([]*DB, len(readers))
+
+	var wg sync.WaitGroup
 	for i, reader := range readers {
-		db, err := OpenDB(reader, config)
-		if err != nil {
-			return nil, err
-		}
-		dbs[i] = db
+		wg.Add(1)
+		go func(i int, reader io.ReaderAt) {
+			defer wg.Done()
+			db, err := OpenDB(reader, config)
+			if err != nil {
+				return
+			}
+			dbs[i] = db
+		}(i, reader)
 	}
+	wg.Wait()
 	return NewMultiDB(dbs), nil
 }
 
