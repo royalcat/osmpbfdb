@@ -125,6 +125,30 @@ func (db *MultiDB) IterWays() iter.Seq2[*osm.Way, error] {
 	}
 }
 
+func (db *MultiDB) CountNodes() int64 {
+	var total int64
+	for _, db := range db.dbs {
+		total += db.CountNodes()
+	}
+	return total
+}
+
+func (db *MultiDB) CountWays() int64 {
+	var total int64
+	for _, db := range db.dbs {
+		total += db.CountWays()
+	}
+	return total
+}
+
+func (db *MultiDB) CountRelations() int64 {
+	var total int64
+	for _, db := range db.dbs {
+		total += db.CountRelations()
+	}
+	return total
+}
+
 func (db *MultiDB) Close() error {
 	errs := make([]error, 0, len(db.dbs))
 	for _, db := range db.dbs {

@@ -27,6 +27,8 @@ type DB struct {
 	log *slog.Logger
 }
 
+var _ OsmDB = (*DB)(nil)
+
 const chunkSize = 64 * 1024 // 64KB
 
 func hashInput(r io.ReaderAt) (string, error) {

@@ -17,5 +17,9 @@ type OsmDB interface {
 	IterWays() iter.Seq2[*osm.Way, error]
 	IterRelations() iter.Seq2[*osm.Relation, error]
 
+	CountNodes() int64
+	CountWays() int64
+	CountRelations() int64
+
 	Close() error
 }
