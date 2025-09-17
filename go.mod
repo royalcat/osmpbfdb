@@ -3,7 +3,7 @@ module github.com/royalcat/osmpbfdb
 go 1.24.5
 
 require (
-	github.com/DataDog/czlib v0.0.0-20240814115052-86a9592b3985
+	github.com/datadog/czlib v0.0.0-20160811164712-4bc9a24e37f2
 	github.com/dgraph-io/ristretto/v2 v2.2.0
 	github.com/edsrzf/mmap-go v1.2.0
 	github.com/goware/singleflight v0.3.0

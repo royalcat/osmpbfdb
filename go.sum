@@ -1,7 +1,6 @@
-github.com/DataDog/czlib v0.0.0-20240814115052-86a9592b3985 h1:0nepyu+UcpcOt3rrr0G4PvNDuoEW2aoqtbh2NK0AQ3w=
-github.com/DataDog/czlib v0.0.0-20240814115052-86a9592b3985/go.mod h1:ROY4muaTWpoeQAx/oUkvxe9zKCmgU5xDGXsfEbA+omc=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
+github.com/datadog/czlib v0.0.0-20160811164712-4bc9a24e37f2 h1:ISaMhBq2dagaoptFGUyywT5SzpysCbHofX3sCNw1djo=
 github.com/datadog/czlib v0.0.0-20160811164712-4bc9a24e37f2/go.mod h1:2yDaWzisHKoQoxm+EU4YgKBaD7g1M0pxy7THWG44Lro=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

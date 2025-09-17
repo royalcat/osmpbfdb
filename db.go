@@ -42,6 +42,7 @@ func hashInput(r io.ReaderAt) (string, error) {
 const minReadCacheSize = osmblob.MaxBlobSize * 5 // around 160MB
 
 // Config of different database knobs
+//
 // Zero value can be used for default configuration.
 type Config struct {
 	IndexDir            string // default is "./osm-index"
