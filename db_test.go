@@ -13,7 +13,6 @@ import (
 
 	"github.com/paulmach/osm"
 	"github.com/royalcat/osmpbfdb"
-	"github.com/royalcat/osmpbfdb/internal/winindex"
 )
 
 const (
@@ -273,40 +272,59 @@ func TestDB(t *testing.T) {
 		t.Fatalf("expected %v, got %v", en.ID, enNode.ID)
 	}
 
+	var nodeIDs []osm.NodeID
+	for node := range d.IterNodes() {
+		nodeIDs = append(nodeIDs, node.ID)
+	}
+
+	var wayIDs []osm.WayID
+	for way := range d.IterWays() {
+		wayIDs = append(wayIDs, way.ID)
+	}
+
+	var relationIDs []osm.RelationID
+	for relation := range d.IterRelations() {
+		relationIDs = append(relationIDs, relation.ID)
+	}
+
 	const testCout = 10
 
-	// for range testCout {
-	// 	randomKey := randomKey(d.indexes.NodeIndex)
-	// 	obj, err := d.GetNode(randomKey)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	if obj.ID != randomKey {
-	// 		t.Fatalf("expected %v, got %v", randomKey, obj.ID)
-	// 	}
-	// }
-
-	// for range testCout {
-	// 	randomKey := randomKey(d.indexes.WayIndex)
-	// 	obj, err := d.GetWay(randomKey)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	if obj.ID != randomKey {
-	// 		t.Fatalf("expected %v, got %v", randomKey, obj.ID)
-	// 	}
-	// }
-
-	// for range testCout {
-	// 	randomKey := randomKey(d.indexes.RelationIndex)
-	// 	obj, err := d.GetRelation(randomKey)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	if obj.ID != randomKey {
-	// 		t.Fatalf("expected %v, got %v", randomKey, obj.ID)
-	// 	}
-	// }
+	t.Run("get random nodes", func(t *testing.T) {
+		for range testCout {
+			randomKey := nodeIDs[rand.Intn(len(nodeIDs))]
+			obj, err := d.GetNode(randomKey)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if obj.ID != randomKey {
+				t.Fatalf("expected %v, got %v", randomKey, obj.ID)
+			}
+		}
+	})
+	t.Run("get random ways", func(t *testing.T) {
+		for range testCout {
+			randomKey := wayIDs[rand.Intn(len(wayIDs))]
+			obj, err := d.GetWay(randomKey)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if obj.ID != randomKey {
+				t.Fatalf("expected %v, got %v", randomKey, obj.ID)
+			}
+		}
+	})
+	t.Run("get random relations", func(t *testing.T) {
+		for range testCout {
+			randomKey := relationIDs[rand.Intn(len(relationIDs))]
+			obj, err := d.GetRelation(randomKey)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if obj.ID != randomKey {
+				t.Fatalf("expected %v, got %v", randomKey, obj.ID)
+			}
+		}
+	})
 
 	PrintMemUsage()
 }
@@ -325,7 +343,6 @@ func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
 }
 
-// FIXME after index update aroud half of run time is spent generating random keys
 func BenchmarkGet(b *testing.B) {
 	ft := &OSMFileTest{
 		FileName:     London,
@@ -373,43 +390,20 @@ func BenchmarkGet(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	// TODO
-	// for b.Loop() {
-	// 	randomKey := randomKey(d.indexes.NodeIndex)
-
-	// 	obj, err := d.GetNode(randomKey)
-	// 	if err != nil {
-	// 		b.Fatal(err)
-	// 	}
-
-	// 	if obj.ID != randomKey {
-	// 		b.Fatalf("expected %v, got %v", randomKey, obj.ObjectID())
-	// 	}
-	// }
-
-}
-
-func randomKey[K ~int64](index *winindex.Index[K]) K {
-	windowCount := index.WindowCount()
-	if windowCount == 0 {
-		return 0 // No windows, return zero value
+	var nodeIDs []osm.NodeID
+	for node := range d.IterNodes() {
+		nodeIDs = append(nodeIDs, node.ID)
 	}
 
-	randomWindowIndex := rand.Intn(int(windowCount))
-
-	var randomWindow winindex.Window[K]
-	var i int
-	for window := range index.RangeWindows() {
-		if i == randomWindowIndex {
-			randomWindow = window
-			break
+	for b.Loop() {
+		randomKey := nodeIDs[rand.Intn(len(nodeIDs))]
+		obj, err := d.GetNode(randomKey)
+		if err != nil {
+			b.Fatal(err)
 		}
-		i++
-	}
 
-	if randomWindow.MinKey == randomWindow.MaxKey {
-		return randomWindow.MinKey
+		if obj.ID != randomKey {
+			b.Fatalf("expected %v, got %v", randomKey, obj.ObjectID())
+		}
 	}
-
-	return randomWindow.MinKey + K(rand.Intn(int(randomWindow.MaxKey-randomWindow.MinKey)))
 }
