@@ -6,12 +6,9 @@ import (
 	"io"
 	"log/slog"
 	"path"
-	"time"
 
-	"github.com/dgraph-io/ristretto/v2"
 	"github.com/goware/singleflight"
 	"github.com/paulmach/osm"
-	"github.com/pbnjay/memory"
 	"github.com/royalcat/osmpbfdb/internal/osmblob"
 )
 
@@ -47,18 +44,13 @@ const minReadCacheSize = osmblob.MaxBlobSize * 5 // around 160MB
 //
 // Zero value can be used for default configuration.
 type Config struct {
-	IndexDir            string // default is "./osm-index"
-	MaxReadCacheSize    int64  // in bytes, default is 2GB
-	CacheSizeAutoAdjust bool   // if true, will adjust the cache size based on available memory
-	Logger              *slog.Logger
+	IndexDir string // default is "./osm-index"
+	Logger   *slog.Logger
 }
 
 func (c *Config) SetDefaults() {
 	if c.IndexDir == "" {
 		c.IndexDir = "./osm-index"
-	}
-	if c.MaxReadCacheSize <= 0 {
-		c.MaxReadCacheSize = 1 << 30 // 2GB
 	}
 	if c.Logger == nil {
 		c.Logger = slog.Default()
@@ -68,48 +60,6 @@ func (c *Config) SetDefaults() {
 // newDecoder returns a new decoder that reads from r.
 func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	config.SetDefaults()
-	cache, err := ristretto.NewCache(&ristretto.Config[uint32, []osm.Object]{
-		NumCounters: 1e7,
-		BufferItems: 64,
-		MaxCost:     config.MaxReadCacheSize,
-		Cost: func(_ []osm.Object) int64 {
-			return osmblob.MaxBlobSize * cacheBlobSizeAmplifier
-		},
-		Metrics: true,
-		// Metrics: true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create read cache: %w", err)
-	}
-
-	if config.CacheSizeAutoAdjust {
-		go func(maxReadCacheSize int64) {
-			for range time.Tick(15 * time.Second) {
-				freeMem := memory.FreeMemory()
-				if freeMem == 0 {
-					continue
-				}
-				currentMaxCost := cache.MaxCost()
-
-				// TODO make sense to make size changes configurable
-				if freeMem*2 < uint64(currentMaxCost) {
-					suggestedNewCost := currentMaxCost - currentMaxCost/4
-					cache.UpdateMaxCost(max(suggestedNewCost, minReadCacheSize))
-					continue
-				} else if freeMem > uint64(maxReadCacheSize)*2 && currentMaxCost < maxReadCacheSize {
-					suggestedNewCost := currentMaxCost + (maxReadCacheSize-currentMaxCost)/2
-					cache.UpdateMaxCost(min(maxReadCacheSize, suggestedNewCost))
-					continue
-				}
-			}
-		}(config.MaxReadCacheSize)
-	}
-
-	go func() {
-		for range time.Tick(time.Minute) {
-			config.Logger.Debug("Cache stats", "ratio", cache.Metrics.Ratio())
-		}
-	}()
 
 	db := &DB{
 		blobReader: osmblob.NewBlobReader(r),
