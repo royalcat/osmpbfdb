@@ -19,7 +19,7 @@ import (
 type DB struct {
 	blobReader *osmblob.BlobReader
 
-	readCache *ristretto.Cache[uint32, []osm.Object]
+	readCache *weakObjCache[uint32]
 	readGroup singleflight.Group[uint32, []osm.Object]
 
 	indexes *Indexes
@@ -113,7 +113,7 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 
 	db := &DB{
 		blobReader: osmblob.NewBlobReader(r),
-		readCache:  cache,
+		readCache:  newWeakObjCache[uint32](),
 		log:        config.Logger,
 	}
 
@@ -149,7 +149,7 @@ func (db *DB) readObjects(offset uint32) ([]osm.Object, error) {
 			return nil, err
 		}
 
-		db.readCache.Set(offset, objects, 0)
+		db.readCache.Set(offset, objects)
 
 		return objects, nil
 	})
