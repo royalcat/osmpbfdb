@@ -21,28 +21,6 @@ func FindInObjects[objType osm.Object](objects []osm.Object, id osm.FeatureID) (
 		return obj, ErrNotFound
 	}
 
-	// used for debugging
-	// {
-	// 	if reflect.TypeOf(objects[i]) != reflect.TypeOf(obj) {
-	// 		panic("type mismatch")
-	// 	}
-	// 	switch obj := objects[i].(type) {
-	// 	case *osm.Node:
-
-	// 		if obj.ID != id.NodeID() {
-	// 			panic("node id mismatch")
-	// 		}
-	// 	case *osm.Way:
-	// 		if obj.ID != id.WayID() {
-	// 			panic("way id mismatch")
-	// 		}
-	// 	case *osm.Relation:
-	// 		if obj.ID != id.RelationID() {
-	// 			panic("relation id mismatch")
-	// 		}
-	// 	}
-	// }
-
 	obj, ok = objects[i].(objType)
 	if ok {
 		return obj, nil

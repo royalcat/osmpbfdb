@@ -38,8 +38,6 @@ func hashInput(r io.ReaderAt) (string, error) {
 	return fmt.Sprintf("%x", sha1.Sum(chunk[:n])), nil
 }
 
-const minReadCacheSize = osmblob.MaxBlobSize * 5 // around 160MB
-
 // Config of different database knobs
 //
 // Zero value can be used for default configuration.
