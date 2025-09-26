@@ -16,7 +16,7 @@ import (
 type DB struct {
 	blobReader *osmblob.BlobReader
 
-	readCache *weakObjCache[uint32]
+	readCache objCache[uint32]
 	readGroup singleflight.Group[uint32, []osm.Object]
 
 	indexes *Indexes
@@ -42,8 +42,9 @@ func hashInput(r io.ReaderAt) (string, error) {
 //
 // Zero value can be used for default configuration.
 type Config struct {
-	IndexDir string // default is "./osm-index"
-	Logger   *slog.Logger
+	IndexDir  string    // default is "./osm-index"
+	CacheType CacheType // default "lru"
+	Logger    *slog.Logger
 }
 
 func (c *Config) SetDefaults() {
