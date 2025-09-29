@@ -7,22 +7,22 @@ import (
 	"github.com/paulmach/osm"
 )
 
-type lruCache[K comparable, V any] struct {
-	lru *expirable.LRU[K, V]
+type lruCache[K comparable] struct {
+	lru *expirable.LRU[K, []osm.Object]
 }
 
-func newLRUObjCache[K comparable, V any](maxSize int) *lruCache[K, V] {
-	return &lruCache[K, V]{
-		lru: expirable.NewLRU[K, V](maxSize, nil, time.Hour),
+func newLRUObjCache[K comparable](maxSize int) *lruCache[K] {
+	return &lruCache[K]{
+		lru: expirable.NewLRU[K, []osm.Object](maxSize, nil, time.Hour),
 	}
 }
 
-var _ objCache[int] = (*lruCache[int, []osm.Object])(nil)
+var _ objCache[int] = (*lruCache[int])(nil)
 
-func (c *lruCache[K, V]) Get(key K) (V, bool) {
+func (c *lruCache[K]) Get(key K) ([]osm.Object, bool) {
 	return c.lru.Get(key)
 }
 
-func (c *lruCache[K, V]) Set(key K, value V) {
+func (c *lruCache[K]) Set(key K, value []osm.Object) {
 	c.lru.Add(key, value)
 }

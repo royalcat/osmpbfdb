@@ -60,9 +60,19 @@ func (c *Config) SetDefaults() {
 func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	config.SetDefaults()
 
+	var readCache objCache[uint32]
+	switch config.CacheType {
+	case CacheTypeLRU:
+		readCache = newLRUObjCache[uint32](1000)
+	case CacheTypeWeak:
+		readCache = newWeakObjCache[uint32]()
+	default:
+		return nil, fmt.Errorf("unknown cache type: %v", config.CacheType)
+	}
+
 	db := &DB{
 		blobReader: osmblob.NewBlobReader(r),
-		readCache:  newWeakObjCache[uint32](),
+		readCache:  readCache,
 		log:        config.Logger,
 	}
 
