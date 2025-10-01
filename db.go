@@ -54,6 +54,9 @@ func (c *Config) SetDefaults() {
 	if c.Logger == nil {
 		c.Logger = slog.Default()
 	}
+	if c.CacheType == "" {
+		c.CacheType = CacheTypeWeak
+	}
 }
 
 // newDecoder returns a new decoder that reads from r.
