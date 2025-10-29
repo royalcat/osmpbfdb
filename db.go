@@ -55,7 +55,7 @@ func (c *Config) SetDefaults() {
 		c.Logger = slog.Default()
 	}
 	if c.CacheType == "" {
-		c.CacheType = CacheTypeWeak
+		c.CacheType = CacheTypeLRU
 	}
 }
 
