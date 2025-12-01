@@ -85,7 +85,7 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	}
 
 	indexDir := path.Join(config.IndexDir, dbHash)
-	db.indexes, err = openIndexes(indexDir, db.blobReader)
+	db.indexes, err = openIndexes(db.log, indexDir, db.blobReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open indexes: %w", err)
 	}
@@ -122,6 +122,3 @@ func (db *DB) readObjects(offset uint32) ([]osm.Object, error) {
 func (db *DB) Close() error {
 	return nil
 }
-
-// data actually weighs more in memory than it does on disk, so we need to allocate more memory for it
-const cacheBlobSizeAmplifier = 16

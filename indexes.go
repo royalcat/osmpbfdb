@@ -2,6 +2,7 @@ package osmpbfdb
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 
@@ -16,7 +17,7 @@ type Indexes struct {
 	RelationIndex *winindex.Index[osm.RelationID]
 }
 
-func openIndexes(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, error) {
+func openIndexes(parentLog *slog.Logger, indexDir string, blobReader *osmblob.BlobReader) (*Indexes, error) {
 	indexes := &Indexes{}
 	completionFile := path.Join(indexDir, ".complete")
 
@@ -30,7 +31,7 @@ func openIndexes(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, err
 			return nil, err
 		}
 
-		indexes, err = buildIndex(indexDir, blobReader)
+		indexes, err = buildIndex(parentLog, indexDir, blobReader)
 		if err != nil {
 			return nil, fmt.Errorf("failed to build index: %w", err)
 		}

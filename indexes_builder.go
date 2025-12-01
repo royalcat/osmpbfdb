@@ -16,8 +16,8 @@ import (
 )
 
 // buildIndex decoding process using n goroutines.
-func buildIndex(indexDir string, blobReader *osmblob.BlobReader) (*Indexes, error) {
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.BlobReader) (*Indexes, error) {
+	log := parentLog.With("function", "buildIndex")
 
 	log.Info("Building indexes, it may take some time")
 
