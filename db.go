@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"path"
+	"slices"
 
 	"github.com/goware/singleflight"
 	"github.com/paulmach/osm"
@@ -17,7 +18,7 @@ type DB struct {
 	blobReader *osmblob.BlobReader
 
 	readCache objCache[uint32]
-	readGroup singleflight.Group[uint32, []osm.Object]
+	readGroup singleflight.Group[uint32, any]
 
 	indexes *Indexes
 
@@ -94,29 +95,57 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 }
 
 func (db *DB) readObjects(offset uint32) ([]osm.Object, error) {
-	objects, ok := db.readCache.Get(offset)
-	if ok {
-		return objects, nil
-	}
-
-	objects, err, _ := db.readGroup.Do(offset, func() ([]osm.Object, error) {
-		// additional check if cache was filled between previous check and group start
-		objects, ok := db.readCache.Get(offset)
-		if ok {
+	objects, err, _ := db.readGroup.Do(offset, func() (any, error) {
+		if objects, ok := db.readCache.Get(offset); ok {
 			return objects, nil
 		}
 
-		objects, err := db.blobReader.ReadObjects(int64(offset))
-		if err != nil {
-			return nil, err
+		objects := make([]osm.Object, 0, 8000)
+		for obj, err := range db.blobReader.ReadObjects(int64(offset)) {
+			if err != nil {
+				return nil, err
+			}
+			objects = append(objects, obj)
 		}
+		objects = slices.Clip(objects)
 
 		db.readCache.Set(offset, objects)
 
 		return objects, nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to read objects: %w", err)
+	}
+	return objects.([]osm.Object), nil
+}
 
-	return objects, err
+func (db *DB) readObject(offset uint32, id osm.FeatureID) (osm.Object, error) {
+	object, err, _ := db.readGroup.Do(offset, func() (any, error) {
+		cachedObjects, _ := db.readCache.Get(offset)
+		for _, obj := range cachedObjects {
+			if osmblob.FeatureID(obj.ObjectID()) == id {
+				return obj, nil
+			}
+		}
+
+		for obj, err := range db.blobReader.ReadObjects(int64(offset)) {
+			if err != nil {
+				return nil, err
+			}
+
+			// db.readCache.Add(offset, obj)
+
+			if osmblob.FeatureID(obj.ObjectID()) == id {
+				return obj, nil
+			}
+		}
+
+		return nil, ErrNotFound
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to read object: %w", err)
+	}
+	return object.(osm.Object), nil
 }
 
 func (db *DB) Close() error {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/paulmach/osm"
-	"github.com/royalcat/osmpbfdb/internal/osmblob"
 )
 
 var ErrNotFound = errors.New("object not found")
@@ -16,12 +15,12 @@ func (db *DB) GetNode(id osm.NodeID) (*osm.Node, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(offset)
+	object, err := db.readObject(offset, id.FeatureID())
 	if err != nil {
 		return nil, err
 	}
 
-	return osmblob.FindInObjects[*osm.Node](objects, id.FeatureID())
+	return object.(*osm.Node), nil
 }
 
 func (db *DB) GetWay(id osm.WayID) (*osm.Way, error) {
@@ -30,12 +29,12 @@ func (db *DB) GetWay(id osm.WayID) (*osm.Way, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(offset)
+	object, err := db.readObject(offset, id.FeatureID())
 	if err != nil {
 		return nil, err
 	}
 
-	return osmblob.FindInObjects[*osm.Way](objects, id.FeatureID())
+	return object.(*osm.Way), nil
 }
 
 func (db *DB) GetRelation(id osm.RelationID) (*osm.Relation, error) {
@@ -44,12 +43,12 @@ func (db *DB) GetRelation(id osm.RelationID) (*osm.Relation, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(offset)
+	object, err := db.readObject(offset, id.FeatureID())
 	if err != nil {
 		return nil, err
 	}
 
-	return osmblob.FindInObjects[*osm.Relation](objects, id.FeatureID())
+	return object.(*osm.Relation), nil
 }
 
 func (db *DB) GetObject(id osm.FeatureID) (osm.Object, error) {

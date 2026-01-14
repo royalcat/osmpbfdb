@@ -39,3 +39,17 @@ func (wm *weakObjCache[K]) Set(key K, value []osm.Object) {
 
 	wm.m[key] = weak.Make(&value)
 }
+
+func (wm *weakObjCache[K]) Add(key K, value osm.Object) {
+	wm.mu.Lock()
+	defer wm.mu.Unlock()
+
+	oldValue := wm.m[key].Value()
+	if oldValue == nil {
+		wm.m[key] = weak.Make(&[]osm.Object{value})
+		return
+	}
+
+	newValue := append(*oldValue, value)
+	wm.m[key] = weak.Make(&newValue)
+}

@@ -106,13 +106,12 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 
 	group.Go(func() error {
 		for blobAt := range blobChan {
-			objects, err := dd.Decode(blobAt.blob)
-			if err != nil {
-				log.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-				return nil
-			}
+			for obj, err := range dd.Decode(blobAt.blob) {
+				if err != nil {
+					log.Error("failed to decode blob", slog.Int64("offset", int64(blobAt.offset)), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+					return nil
+				}
 
-			for _, obj := range objects {
 				// objectIndexBuilder.Add(obj.ObjectID(), bytesRead)
 				switch obj := obj.(type) {
 				case *osm.Node:
@@ -122,6 +121,7 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 				case *osm.Relation:
 					relationIndexBuilder.Add(obj.ID, uint32(blobAt.offset))
 				}
+
 			}
 		}
 

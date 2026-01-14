@@ -1,37 +1,40 @@
 package osmblob
 
 import (
-	"cmp"
-	"slices"
+	"fmt"
+	"iter"
 
 	"github.com/paulmach/osm"
 )
 
-func (db *BlobReader) ReadObjects(offset int64) ([]osm.Object, error) {
+func (db *BlobReader) ReadObjects(offset int64) iter.Seq2[osm.Object, error] {
+	return func(yield func(osm.Object, error) bool) {
+		dd := dataDecoderPool.Get()
+		defer dataDecoderPool.Put(dd)
 
-	dd := dataDecoderPool.Get()
-	defer dataDecoderPool.Put(dd)
+		_, _, blob, err := db.ReadFileBlock(offset)
+		if err != nil {
+			if !yield(nil, fmt.Errorf("failed to read file block: %w", err)) {
+				return
+			}
+		}
 
-	_, _, blob, err := db.ReadFileBlock(offset)
-	if err != nil {
-		return nil, err
+		for obj, err := range dd.Decode(blob) {
+			if err != nil {
+				if !yield(obj, fmt.Errorf("failed to decode object: %w", err)) {
+					return
+				}
+			}
+
+			if !yield(obj, nil) {
+				return
+			}
+		}
 	}
-
-	objects, err := dd.Decode(blob)
-	if err != nil {
-		return nil, err
-	}
-
-	slices.SortFunc(objects, func(a, b osm.Object) int {
-		return cmp.Compare(featureID(a.ObjectID()), featureID(b.ObjectID()))
-	})
-	objects = slices.Clip(objects)
-
-	return objects, nil
 }
 
 const featureMask = 0x7FFFFFFFFFFF0000
 
-func featureID(id osm.ObjectID) osm.FeatureID {
+func FeatureID(id osm.ObjectID) osm.FeatureID {
 	return osm.FeatureID(id & featureMask)
 }

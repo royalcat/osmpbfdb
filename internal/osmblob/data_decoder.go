@@ -2,6 +2,8 @@ package osmblob
 
 import (
 	"errors"
+	"fmt"
+	"iter"
 	"time"
 
 	"github.com/paulmach/osm"
@@ -13,7 +15,6 @@ import (
 // DataDecoder is a decoder for Blob with OSMData (PrimitiveBlock).
 type DataDecoder struct {
 	data []byte
-	q    []osm.Object
 
 	// cache objects to save allocations
 	primitiveBlock *osmproto.PrimitiveBlock
@@ -46,443 +47,560 @@ type DataDecoder struct {
 	keyvals *protoscan.Iterator
 }
 
-func (dec *DataDecoder) Decode(blob *osmproto.Blob) ([]osm.Object, error) {
-	dec.q = make([]osm.Object, 0, 8000) // typical PrimitiveBlock contains 8k OSM entities
-
-	var err error
-	dec.data, err = getData(blob, dec.data)
-	if err != nil {
-		return nil, err
-	}
-
-	err = dec.scanPrimitiveBlock(dec.data)
-	if err != nil {
-		return nil, err
-	}
-	return dec.q, nil
-}
-
-func (dec *DataDecoder) scanPrimitiveBlock(data []byte) error {
-	msg := protoscan.New(data)
-
-	if dec.primitiveBlock == nil {
-		dec.primitiveBlock = &osmproto.PrimitiveBlock{
-			Stringtable: &osmproto.StringTable{},
-		}
-	} else {
-		dec.primitiveBlock.Stringtable.S = dec.primitiveBlock.Stringtable.S[:0]
-		dec.primitiveBlock.Primitivegroup = dec.primitiveBlock.Primitivegroup[:0]
-		dec.primitiveBlock.Granularity = nil
-		dec.primitiveBlock.LatOffset = nil
-		dec.primitiveBlock.LonOffset = nil
-		dec.primitiveBlock.DateGranularity = nil
-	}
-
-	for msg.Next() {
-		switch msg.FieldNumber() {
-		case 1:
-			d, err := msg.MessageData()
-			if err != nil {
-				return err
-			}
-			err = proto.Unmarshal(d, dec.primitiveBlock.Stringtable)
-			if err != nil {
-				return err
-			}
-		case 17:
-			v, err := msg.Int32()
-			dec.primitiveBlock.Granularity = &v
-			if err != nil {
-				return err
-			}
-		case 18:
-			v, err := msg.Int32()
-			dec.primitiveBlock.DateGranularity = &v
-			if err != nil {
-				return err
-			}
-		case 19:
-			v, err := msg.Int64()
-			dec.primitiveBlock.LatOffset = &v
-			if err != nil {
-				return err
-			}
-		case 20:
-			v, err := msg.Int64()
-			dec.primitiveBlock.LonOffset = &v
-			if err != nil {
-				return err
-			}
-		default:
-			msg.Skip()
-		}
-	}
-
-	if msg.Err() != nil {
-		return msg.Err()
-	}
-
-	// we need the offsets and granularities for the group decoding
-
-	msg.Reset(nil)
-	for msg.Next() {
-		switch msg.FieldNumber() {
-		case 2:
-			d, err := msg.MessageData()
-			if err != nil {
-				return err
-			}
-			err = dec.scanPrimitiveGroup(d)
-			if err != nil {
-				return err
-			}
-		default:
-			msg.Skip()
-		}
-	}
-
-	return msg.Err()
-}
-
-func (dec *DataDecoder) scanPrimitiveGroup(data []byte) error {
-	msg := protoscan.New(data)
-
-	way := &osm.Way{Visible: true}
-	relation := &osm.Relation{Visible: true}
-
-	for msg.Next() {
-		fn := msg.FieldNumber()
-		if fn == 1 {
-			panic("nodes are not supported, currently untested")
-		}
-
-		if fn == 2 {
-			data, err := msg.MessageData()
-			if err != nil {
-				return err
-			}
-
-			err = dec.scanDenseNodes(data)
-			if err != nil {
-				return err
-			}
-
-			continue
-		}
-
-		if fn == 3 {
-			data, err := msg.MessageData()
-			if err != nil {
-				return err
-			}
-
-			way, err = dec.scanWays(data, way)
-			if err != nil {
-				return err
-			}
-
-			dec.q = append(dec.q, way)
-			way = &osm.Way{Visible: true}
-
-			continue
-		}
-
-		if fn == 4 {
-			data, err := msg.MessageData()
-			if err != nil {
-				return err
-			}
-
-			relation, err = dec.scanRelations(data, relation)
-			if err != nil {
-				return err
-			}
-
-			dec.q = append(dec.q, relation)
-			relation = &osm.Relation{Visible: true}
-
-			continue
-		}
-
-		msg.Skip()
-	}
-
-	return msg.Err()
-}
-
-func (dec *DataDecoder) scanDenseNodes(data []byte) error {
-	var foundIds, foundInfo, foundLats, foundLons, foundKeyVals bool
-
-	msg := protoscan.New(data)
-	for msg.Next() {
+func (dec *DataDecoder) Decode(blob *osmproto.Blob) iter.Seq2[osm.Object, error] {
+	return func(yield func(osm.Object, error) bool) {
 		var err error
-		switch msg.FieldNumber() {
-		case 1: // ids
-			dec.ids, err = msg.Iterator(dec.ids)
-			foundIds = true
-		case 5: // dense info
-			d, err := msg.MessageData()
-			if err != nil {
-				return err
-			}
-
-			// verify all the fields are "found" since we reuse object from last block
-			// and can't just check for nil
-			var foundVersions, foundTimestamps, foundChangesets,
-				foundUids, foundUsids, foundVisibles bool
-
-			info := protoscan.New(d)
-			for info.Next() {
-				var err error
-				switch info.FieldNumber() {
-				case 1: // version
-					dec.versions, err = info.Iterator(dec.versions)
-					foundVersions = true
-				case 2: // timestamp
-					dec.timestamps, err = info.Iterator(dec.timestamps)
-					foundTimestamps = true
-				case 3: // changeset
-					dec.changesets, err = info.Iterator(dec.changesets)
-					foundChangesets = true
-				case 4: // uid
-					dec.uids, err = info.Iterator(dec.uids)
-					foundUids = true
-				case 5: // user_sid
-					dec.usids, err = info.Iterator(dec.usids)
-					foundUsids = true
-				case 6: // visible, optional, default true
-					dec.visibles, err = info.Iterator(dec.visibles)
-					foundVisibles = true
-				default:
-					info.Skip()
-				}
-
-				if err != nil {
-					return err
-				}
-			}
-
-			if info.Err() != nil {
-				return info.Err()
-			}
-
-			if !foundVersions {
-				dec.versions = nil
-			}
-
-			if !foundTimestamps {
-				dec.timestamps = nil
-			}
-
-			if !foundChangesets {
-				dec.changesets = nil
-			}
-
-			if !foundUids {
-				dec.uids = nil
-			}
-
-			if !foundUsids {
-				dec.usids = nil
-			}
-
-			// visibles are optional, default is true
-			if !foundVisibles {
-				dec.visibles = nil
-			}
-
-			foundInfo = true
-		case 8: // lat
-			dec.lats, err = msg.Iterator(dec.lats)
-			foundLats = true
-		case 9: // lon
-			dec.lons, err = msg.Iterator(dec.lons)
-			foundLons = true
-		case 10: // keys_vals
-			dec.keyvals, err = msg.Iterator(dec.keyvals)
-			foundKeyVals = true
-		default:
-			msg.Skip()
-		}
-
+		dec.data, err = getData(blob, dec.data)
 		if err != nil {
-			return err
+			yield(nil, fmt.Errorf("get uncompressed data: %w", err))
+			return
+		}
+
+		for obj, err := range dec.scanPrimitiveBlock(dec.data) {
+			if err != nil {
+				if !yield(obj, fmt.Errorf("scan primitive block: %w", err)) {
+					return
+				}
+			}
+
+			if !yield(obj, nil) {
+				return
+			}
 		}
 	}
-
-	if msg.Err() != nil {
-		return msg.Err()
-	}
-
-	if !foundIds {
-		return errors.New("osmproto: dense node did not contain ids")
-	}
-
-	if !foundLats {
-		return errors.New("osmproto: dense node did not contain latitudes")
-	}
-
-	if !foundLons {
-		return errors.New("osmproto: dense node did not contain longitudes")
-	}
-
-	// keyvals could be empty if all nodes are tagless
-	if !foundKeyVals {
-		dec.keyvals = nil
-	}
-
-	if !foundInfo {
-		dec.versions = nil
-		dec.timestamps = nil
-		dec.changesets = nil
-		dec.uids = nil
-		dec.usids = nil
-		dec.visibles = nil
-	}
-
-	return dec.extractDenseNodes()
 }
 
-func (dec *DataDecoder) extractDenseNodes() error {
-	st := dec.primitiveBlock.GetStringtable().GetS()
-	granularity := int64(dec.primitiveBlock.GetGranularity())
-	dateGranularity := int64(dec.primitiveBlock.GetDateGranularity())
+func (dec *DataDecoder) scanPrimitiveBlock(data []byte) iter.Seq2[osm.Object, error] {
+	return func(yield func(osm.Object, error) bool) {
+		msg := protoscan.New(data)
 
-	latOffset := dec.primitiveBlock.GetLatOffset()
-	lonOffset := dec.primitiveBlock.GetLonOffset()
-
-	// NOTE: do not try pre-allocating an array of nodes because saving
-	// just one will stop the GC from cleaning up the whole pre-allocated array.
-	n := &osm.Node{Visible: true}
-
-	var id, lat, lon, timestamp, changeset int64
-	var uid, usid int32
-	for dec.ids.HasNext() {
-		// ID
-		v1, err := dec.ids.Sint64()
-		if err != nil {
-			return err
-		}
-		id += v1
-		n.ID = osm.NodeID(id)
-
-		// Version
-		if dec.versions != nil {
-			v2, err := dec.versions.Int32()
-			if err != nil {
-				return err
+		if dec.primitiveBlock == nil {
+			dec.primitiveBlock = &osmproto.PrimitiveBlock{
+				Stringtable: &osmproto.StringTable{},
 			}
-			n.Version = int(v2)
+		} else {
+			dec.primitiveBlock.Stringtable.S = dec.primitiveBlock.Stringtable.S[:0]
+			dec.primitiveBlock.Primitivegroup = dec.primitiveBlock.Primitivegroup[:0]
+			dec.primitiveBlock.Granularity = nil
+			dec.primitiveBlock.LatOffset = nil
+			dec.primitiveBlock.LonOffset = nil
+			dec.primitiveBlock.DateGranularity = nil
 		}
 
-		// Timestamp
-		if dec.timestamps != nil {
-			v3, err := dec.timestamps.Sint64()
-			if err != nil {
-				return err
-			}
-			timestamp += v3
-			millisec := time.Duration(timestamp*dateGranularity) * time.Millisecond
-			n.Timestamp = time.Unix(0, millisec.Nanoseconds()).UTC()
-		}
-
-		// Changeset
-		if dec.changesets != nil {
-			v4, err := dec.changesets.Sint64()
-			if err != nil {
-				return err
-			}
-			changeset += v4
-			n.ChangesetID = osm.ChangesetID(changeset)
-		}
-
-		// uid
-		if dec.uids != nil {
-			v5, err := dec.uids.Sint32()
-			if err != nil {
-				return err
-			}
-			uid += v5
-			n.UserID = osm.UserID(uid)
-		}
-
-		// usid
-		if dec.usids != nil {
-			v6, err := dec.usids.Sint32()
-			if err != nil {
-				return err
-			}
-			usid += v6
-			n.User = st[usid]
-		}
-
-		// Visible
-		if dec.visibles != nil {
-			v7, err := dec.visibles.Bool()
-			if err != nil {
-				return err
-			}
-			n.Visible = v7
-		}
-
-		// lat
-		v8, err := dec.lats.Sint64()
-		if err != nil {
-			return err
-		}
-		lat += v8
-		n.Lat = 1e-9 * float64(latOffset+(granularity*lat))
-
-		// lon
-		v9, err := dec.lons.Sint64()
-		if err != nil {
-			return err
-		}
-		lon += v9
-		n.Lon = 1e-9 * float64(lonOffset+(granularity*lon))
-
-		// tags, could be missing if all nodes are tagless
-		if dec.keyvals != nil {
-			count := 0
-			for i := dec.keyvals.Index; i < len(dec.keyvals.Data); i++ {
-				b := dec.keyvals.Data[i]
-				if b == 0 {
-					break
-				}
-
-				if b < 128 {
-					count++
-				}
-			}
-
-			if cap(n.Tags) < count/2 {
-				n.Tags = make(osm.Tags, 0, count/2)
-			}
-			for {
-				k, err := dec.keyvals.Int32()
+		for msg.Next() {
+			switch msg.FieldNumber() {
+			case 1:
+				d, err := msg.MessageData()
 				if err != nil {
-					return err
+					if !yield(nil, fmt.Errorf("get message data: %w", err)) {
+						return
+					}
+					continue
 				}
-
-				if k == 0 {
-					break
-				}
-
-				v, err := dec.keyvals.Int32()
+				err = proto.Unmarshal(d, dec.primitiveBlock.Stringtable)
 				if err != nil {
-					return err
+					if !yield(nil, fmt.Errorf("unmarshal string table: %w", err)) {
+						return
+					}
+					continue
 				}
+			case 17:
+				v, err := msg.Int32()
+				dec.primitiveBlock.Granularity = &v
+				if err != nil {
+					if !yield(nil, fmt.Errorf("get granularity: %w", err)) {
+						return
+					}
+					continue
+				}
+			case 18:
+				v, err := msg.Int32()
+				dec.primitiveBlock.DateGranularity = &v
+				if err != nil {
+					if !yield(nil, fmt.Errorf("get date granularity: %w", err)) {
+						return
+					}
+					continue
+				}
+			case 19:
+				v, err := msg.Int64()
+				dec.primitiveBlock.LatOffset = &v
+				if err != nil {
+					if !yield(nil, fmt.Errorf("get latitude offset: %w", err)) {
+						return
+					}
+					continue
+				}
+			case 20:
+				v, err := msg.Int64()
+				dec.primitiveBlock.LonOffset = &v
+				if err != nil {
+					if !yield(nil, fmt.Errorf("get longitude offset: %w", err)) {
+						return
+					}
+					continue
+				}
+			default:
+				msg.Skip()
+			}
 
-				n.Tags = append(n.Tags, osm.Tag{Key: st[k], Value: st[v]})
+			if err := msg.Err(); err != nil {
+				if !yield(nil, fmt.Errorf("scan primitive block: %w", err)) {
+					return
+				}
 			}
 		}
 
-		dec.q = append(dec.q, n)
-		n = &osm.Node{Visible: true}
+		if err := msg.Err(); err != nil {
+			if !yield(nil, fmt.Errorf("scan primitive block: %w", err)) {
+				return
+			}
+		}
 
+		msg.Reset(nil)
+		for msg.Next() {
+			switch msg.FieldNumber() {
+			case 2:
+				d, err := msg.MessageData()
+				if err != nil {
+					if !yield(nil, fmt.Errorf("get message data: %w", err)) {
+						return
+					}
+					continue
+				}
+				for obj, err := range dec.scanPrimitiveGroup(d) {
+					if err != nil {
+						if !yield(obj, fmt.Errorf("scan primitive group: %w", err)) {
+							return
+						}
+					}
+
+					if !yield(obj, nil) {
+						return
+					}
+				}
+			default:
+				msg.Skip()
+			}
+		}
 	}
+}
 
-	return nil
+func (dec *DataDecoder) scanPrimitiveGroup(data []byte) iter.Seq2[osm.Object, error] {
+	return func(yield func(osm.Object, error) bool) {
+		msg := protoscan.New(data)
+		way := &osm.Way{Visible: true}
+		relation := &osm.Relation{Visible: true}
+
+		for msg.Next() {
+			switch msg.FieldNumber() {
+			case 1:
+				panic("nodes are not supported, currently untested")
+			case 2:
+				data, err := msg.MessageData()
+				if err != nil {
+					if !yield(nil, fmt.Errorf("get message data: %w", err)) {
+						return
+					}
+				}
+
+				for node, err := range dec.scanDenseNodes(data) {
+					if err != nil {
+						if !yield(nil, fmt.Errorf("scan dense nodes: %w", err)) {
+							return
+						}
+					}
+
+					if !yield(&node, nil) {
+						return
+					}
+				}
+			case 3:
+				data, err := msg.MessageData()
+				if err != nil {
+					if !yield(nil, fmt.Errorf("get message data: %w", err)) {
+						return
+					}
+				}
+
+				way, err = dec.scanWays(data, way)
+				if err != nil {
+					if !yield(nil, fmt.Errorf("scan ways: %w", err)) {
+						return
+					}
+				}
+
+				if !yield(way, nil) {
+					return
+				}
+				way = &osm.Way{Visible: true}
+			case 4:
+				data, err := msg.MessageData()
+				if err != nil {
+					if !yield(nil, fmt.Errorf("get message data: %w", err)) {
+						return
+					}
+				}
+
+				relation, err = dec.scanRelations(data, relation)
+				if err != nil {
+					if !yield(nil, fmt.Errorf("scan relations: %w", err)) {
+						return
+					}
+				}
+				if !yield(relation, nil) {
+					return
+				}
+				relation = &osm.Relation{Visible: true}
+			default:
+				msg.Skip()
+			}
+		}
+		if err := msg.Err(); err != nil {
+			if !yield(nil, fmt.Errorf("scan message: %w", err)) {
+				return
+			}
+		}
+	}
+}
+
+func (dec *DataDecoder) scanDenseNodes(data []byte) iter.Seq2[osm.Node, error] {
+	return func(yield func(osm.Node, error) bool) {
+		var foundIds, foundInfo, foundLats, foundLons, foundKeyVals bool
+
+		msg := protoscan.New(data)
+		for msg.Next() {
+			var err error
+			switch msg.FieldNumber() {
+			case 1: // ids
+				dec.ids, err = msg.Iterator(dec.ids)
+				foundIds = true
+			case 5: // dense info
+				d, err := msg.MessageData()
+				if err != nil {
+					if !yield(osm.Node{}, fmt.Errorf("get message data: %w", err)) {
+						return
+					}
+				}
+
+				// verify all the fields are "found" since we reuse object from last block
+				// and can't just check for nil
+				var foundVersions, foundTimestamps, foundChangesets,
+					foundUids, foundUsids, foundVisibles bool
+
+				info := protoscan.New(d)
+				for info.Next() {
+					var err error
+					switch info.FieldNumber() {
+					case 1: // version
+						dec.versions, err = info.Iterator(dec.versions)
+						foundVersions = true
+					case 2: // timestamp
+						dec.timestamps, err = info.Iterator(dec.timestamps)
+						foundTimestamps = true
+					case 3: // changeset
+						dec.changesets, err = info.Iterator(dec.changesets)
+						foundChangesets = true
+					case 4: // uid
+						dec.uids, err = info.Iterator(dec.uids)
+						foundUids = true
+					case 5: // user_sid
+						dec.usids, err = info.Iterator(dec.usids)
+						foundUsids = true
+					case 6: // visible, optional, default true
+						dec.visibles, err = info.Iterator(dec.visibles)
+						foundVisibles = true
+					default:
+						info.Skip()
+					}
+
+					if err != nil {
+						if !yield(osm.Node{}, fmt.Errorf("scan message: %w", err)) {
+							return
+						}
+					}
+				}
+
+				if err := info.Err(); err != nil {
+					if !yield(osm.Node{}, fmt.Errorf("scan message: %w", err)) {
+						return
+					}
+				}
+
+				if !foundVersions {
+					dec.versions = nil
+				}
+
+				if !foundTimestamps {
+					dec.timestamps = nil
+				}
+
+				if !foundChangesets {
+					dec.changesets = nil
+				}
+
+				if !foundUids {
+					dec.uids = nil
+				}
+
+				if !foundUsids {
+					dec.usids = nil
+				}
+
+				// visibles are optional, default is true
+				if !foundVisibles {
+					dec.visibles = nil
+				}
+
+				foundInfo = true
+			case 8: // lat
+				dec.lats, err = msg.Iterator(dec.lats)
+				foundLats = true
+			case 9: // lon
+				dec.lons, err = msg.Iterator(dec.lons)
+				foundLons = true
+			case 10: // keys_vals
+				dec.keyvals, err = msg.Iterator(dec.keyvals)
+				foundKeyVals = true
+			default:
+				msg.Skip()
+			}
+
+			if err != nil {
+				if !yield(osm.Node{}, fmt.Errorf("scan message: %w", err)) {
+					return
+				}
+			}
+		}
+
+		if err := msg.Err(); err != nil {
+			if !yield(osm.Node{}, fmt.Errorf("scan message: %w", err)) {
+				return
+			}
+		}
+
+		if !foundIds {
+			if !yield(osm.Node{}, errors.New("osmproto: dense node did not contain ids")) {
+				return
+			}
+		}
+
+		if !foundLats {
+			if !yield(osm.Node{}, errors.New("osmproto: dense node did not contain latitudes")) {
+				return
+			}
+		}
+
+		if !foundLons {
+			if !yield(osm.Node{}, errors.New("osmproto: dense node did not contain longitudes")) {
+				return
+			}
+		}
+
+		// keyvals could be empty if all nodes are tagless
+		if !foundKeyVals {
+			dec.keyvals = nil
+		}
+
+		if !foundInfo {
+			dec.versions = nil
+			dec.timestamps = nil
+			dec.changesets = nil
+			dec.uids = nil
+			dec.usids = nil
+			dec.visibles = nil
+		}
+
+		for node, err := range dec.extractDenseNodes() {
+			if err != nil {
+				if !yield(node, fmt.Errorf("extract dense nodes: %w", err)) {
+					return
+				}
+			}
+
+			if !yield(node, nil) {
+				return
+			}
+		}
+	}
+}
+
+func (dec *DataDecoder) extractDenseNodes() iter.Seq2[osm.Node, error] {
+	return func(yield func(osm.Node, error) bool) {
+
+		st := dec.primitiveBlock.GetStringtable().GetS()
+		granularity := int64(dec.primitiveBlock.GetGranularity())
+		dateGranularity := int64(dec.primitiveBlock.GetDateGranularity())
+
+		latOffset := dec.primitiveBlock.GetLatOffset()
+		lonOffset := dec.primitiveBlock.GetLonOffset()
+
+		// NOTE: do not try pre-allocating an array of nodes because saving
+		// just one will stop the GC from cleaning up the whole pre-allocated array.
+		n := osm.Node{Visible: true}
+
+		var id, lat, lon, timestamp, changeset int64
+		var uid, usid int32
+		for dec.ids.HasNext() {
+			// ID
+			v1, err := dec.ids.Sint64()
+			if err != nil {
+				if !yield(osm.Node{}, err) {
+					return
+				}
+				continue
+			}
+			id += v1
+			n.ID = osm.NodeID(id)
+
+			// Version
+			if dec.versions != nil {
+				v2, err := dec.versions.Int32()
+				if err != nil {
+					if !yield(osm.Node{}, err) {
+						return
+					}
+					continue
+				}
+				n.Version = int(v2)
+			}
+
+			// Timestamp
+			if dec.timestamps != nil {
+				v3, err := dec.timestamps.Sint64()
+				if err != nil {
+					if !yield(osm.Node{}, err) {
+						return
+					}
+					continue
+				}
+				timestamp += v3
+				millisec := time.Duration(timestamp*dateGranularity) * time.Millisecond
+				n.Timestamp = time.Unix(0, millisec.Nanoseconds()).UTC()
+			}
+
+			// Changeset
+			if dec.changesets != nil {
+				v4, err := dec.changesets.Sint64()
+				if err != nil {
+					if !yield(osm.Node{}, err) {
+						return
+					}
+					continue
+				}
+				changeset += v4
+				n.ChangesetID = osm.ChangesetID(changeset)
+			}
+
+			// uid
+			if dec.uids != nil {
+				v5, err := dec.uids.Sint32()
+				if err != nil {
+					if !yield(osm.Node{}, err) {
+						return
+					}
+					continue
+				}
+				uid += v5
+				n.UserID = osm.UserID(uid)
+			}
+
+			// usid
+			if dec.usids != nil {
+				v6, err := dec.usids.Sint32()
+				if err != nil {
+					if !yield(osm.Node{}, err) {
+						return
+					}
+					continue
+				}
+				usid += v6
+				n.User = st[usid]
+			}
+
+			// Visible
+			if dec.visibles != nil {
+				v7, err := dec.visibles.Bool()
+				if err != nil {
+					if !yield(osm.Node{}, err) {
+						return
+					}
+					continue
+				}
+				n.Visible = v7
+			}
+
+			// lat
+			v8, err := dec.lats.Sint64()
+			if err != nil {
+				if !yield(osm.Node{}, err) {
+					return
+				}
+				continue
+			}
+			lat += v8
+			n.Lat = 1e-9 * float64(latOffset+(granularity*lat))
+
+			// lon
+			v9, err := dec.lons.Sint64()
+			if err != nil {
+				if !yield(osm.Node{}, err) {
+					return
+				}
+				continue
+			}
+			lon += v9
+			n.Lon = 1e-9 * float64(lonOffset+(granularity*lon))
+
+			// tags, could be missing if all nodes are tagless
+			if dec.keyvals != nil {
+				count := 0
+				for i := dec.keyvals.Index; i < len(dec.keyvals.Data); i++ {
+					b := dec.keyvals.Data[i]
+					if b == 0 {
+						break
+					}
+
+					if b < 128 {
+						count++
+					}
+				}
+
+				if cap(n.Tags) < count/2 {
+					n.Tags = make(osm.Tags, 0, count/2)
+				}
+				for {
+					k, err := dec.keyvals.Int32()
+					if err != nil {
+						if !yield(osm.Node{}, err) {
+							return
+						}
+						continue
+					}
+
+					if k == 0 {
+						break
+					}
+
+					v, err := dec.keyvals.Int32()
+					if err != nil {
+						if !yield(osm.Node{}, err) {
+							return
+						}
+						continue
+					}
+
+					n.Tags = append(n.Tags, osm.Tag{Key: st[k], Value: st[v]})
+				}
+			}
+
+			if !yield(n, nil) {
+				return
+			}
+			n = osm.Node{Visible: true}
+
+		}
+	}
 }
 
 func (dec *DataDecoder) scanWays(data []byte, way *osm.Way) (*osm.Way, error) {
