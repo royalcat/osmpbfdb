@@ -1,6 +1,7 @@
 package osmblob
 
 import (
+	"iter"
 	"slices"
 	"time"
 
@@ -9,12 +10,18 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+var (
+	blobDataPool = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobSize) })
+)
+
 type objectDecoder struct {
 	block *osmproto.PrimitiveBlock
 }
 
 func NewDecoderFromBlob(blob *osmproto.Blob) (*objectDecoder, error) {
-	var data []byte
+	data := blobDataPool.Get()
+	defer blobDataPool.Put(data)
+
 	data, err := getData(blob, data)
 	if err != nil {
 		return nil, err
@@ -175,7 +182,7 @@ func (dec *objectDecoder) DecodeNodes() ([]*osm.Node, error) {
 	nodes := make([]*osm.Node, 0, 8000)
 
 	for _, group := range dec.block.GetPrimitivegroup() {
-		for _, node := range extractDenseNodes(dec.block, group.GetDense()) {
+		for node := range extractDenseNodes(dec.block, group.GetDense()) {
 			nodes = append(nodes, node)
 		}
 
@@ -190,71 +197,87 @@ func (dec *objectDecoder) DecodeNodes() ([]*osm.Node, error) {
 	return nodes, nil
 }
 
-func extractDenseNodes(primitiveBlock *osmproto.PrimitiveBlock, denseNodes *osmproto.DenseNodes) []*osm.Node {
-	out := make([]*osm.Node, 0, len(denseNodes.GetId()))
+func extractDenseNodes(primitiveBlock *osmproto.PrimitiveBlock, denseNodes *osmproto.DenseNodes) iter.Seq[*osm.Node] {
 
-	st := primitiveBlock.GetStringtable().GetS()
-	granularity := int64(primitiveBlock.GetGranularity())
-	dateGranularity := int64(primitiveBlock.GetDateGranularity())
+	return func(yield func(*osm.Node) bool) {
 
-	latOffset := primitiveBlock.GetLatOffset()
-	lonOffset := primitiveBlock.GetLonOffset()
+		st := primitiveBlock.GetStringtable().GetS()
+		granularity := int64(primitiveBlock.GetGranularity())
+		dateGranularity := int64(primitiveBlock.GetDateGranularity())
 
-	info := denseNodes.GetDenseinfo()
+		latOffset := primitiveBlock.GetLatOffset()
+		lonOffset := primitiveBlock.GetLonOffset()
 
-	kvs := []map[int32]int32{{}}
-	current := 0
-	for _, kv := range denseNodes.GetKeysVals() {
-		if kv == 0 {
-			kvs = append(kvs, map[int32]int32{})
-			current++
-		} else {
-			kvs[current][kv] = denseNodes.GetKeysVals()[kv]
-		}
-	}
+		info := denseNodes.GetDenseinfo()
 
-	// NOTE: do not try pre-allocating an array of nodes because saving
-	// just one will stop the GC from cleaning up the whole pre-allocated array.
-	n := &osm.Node{Visible: true}
-
-	var id, lat, lon, timestamp, changeset int64
-	var uid, usid int32
-	for i, dID := range denseNodes.GetId() {
-		id += dID
-		n.ID = osm.NodeID(id)
-		n.Version = int(info.GetVersion()[i])
-
-		timestamp += info.GetTimestamp()[i]
-		millisec := time.Duration(timestamp*dateGranularity) * time.Millisecond
-		n.Timestamp = time.Unix(0, millisec.Nanoseconds()).UTC()
-
-		changeset += info.GetChangeset()[i]
-		n.ChangesetID = osm.ChangesetID(changeset)
-
-		uid += info.GetUid()[i]
-		n.UserID = osm.UserID(uid)
-
-		usid += info.GetUserSid()[i]
-		n.User = st[usid]
-
-		if visible := info.GetVisible(); i < len(visible) {
-			n.Visible = visible[i]
-		}
-
-		lat += denseNodes.Lat[i]
-		n.Lat = 1e-9 * float64(latOffset+(granularity*lat))
-		lon += denseNodes.Lon[i]
-		n.Lon = 1e-9 * float64(lonOffset+(granularity*lon))
-
-		if i < len(kvs) {
-			for k, v := range kvs[i] {
-				n.Tags = append(n.Tags, osm.Tag{Key: st[k], Value: st[v]})
+		keyvals := denseNodes.GetKeysVals()
+		kvs := make([]map[int32]int32, 1, len(keyvals)/2)
+		kvs[0] = map[int32]int32{}
+		current := 0
+		i := 0
+		for i < len(keyvals) {
+			k := keyvals[i]
+			if k == 0 {
+				kvs = append(kvs, map[int32]int32{})
+				current++
+				i++
+				continue
 			}
+			if i+2 > len(keyvals) {
+				break
+			}
+			v := keyvals[i+1]
+
+			kvs[current][k] = v
+			i += 2
 		}
-		out = append(out, n)
 
-		n = &osm.Node{Visible: true}
+		// NOTE: do not try pre-allocating an array of nodes because saving
+		// just one will stop the GC from cleaning up the whole pre-allocated array.
+		n := &osm.Node{Visible: true}
+
+		var id, lat, lon, timestamp, changeset int64
+		var uid, usid int32
+		for i, dID := range denseNodes.GetId() {
+			id += dID
+			n.ID = osm.NodeID(id)
+			n.Version = int(info.GetVersion()[i])
+
+			timestamp += info.GetTimestamp()[i]
+			millisec := time.Duration(timestamp*dateGranularity) * time.Millisecond
+			n.Timestamp = time.Unix(0, millisec.Nanoseconds()).UTC()
+
+			changeset += info.GetChangeset()[i]
+			n.ChangesetID = osm.ChangesetID(changeset)
+
+			uid += info.GetUid()[i]
+			n.UserID = osm.UserID(uid)
+
+			usid += info.GetUserSid()[i]
+			n.User = st[usid]
+
+			if visible := info.GetVisible(); i < len(visible) {
+				n.Visible = visible[i]
+			}
+
+			lat += denseNodes.Lat[i]
+			n.Lat = 1e-9 * float64(latOffset+(granularity*lat))
+			lon += denseNodes.Lon[i]
+			n.Lon = 1e-9 * float64(lonOffset+(granularity*lon))
+
+			if i < len(kvs) {
+				n.Tags = make([]osm.Tag, 0, len(kvs[i]))
+				for k, v := range kvs[i] {
+					n.Tags = append(n.Tags, osm.Tag{Key: st[k], Value: st[v]})
+				}
+			}
+
+			if !yield(n) {
+				return
+			}
+
+			n = &osm.Node{Visible: true}
+		}
+
 	}
-
-	return out
 }
