@@ -33,9 +33,8 @@ const (
 )
 
 var (
-	headerBufPool   = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobHeaderSize) })
-	blobBufPool     = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobSize) })
-	dataDecoderPool = newSyncPool[*DataDecoder](func() *DataDecoder { return &DataDecoder{} })
+	headerBufPool = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobHeaderSize) })
+	blobBufPool   = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobSize) })
 )
 
 type BlobReader struct {
