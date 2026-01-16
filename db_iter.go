@@ -13,22 +13,15 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) ite
 		Err  error
 	}
 
-	selector := objSelector{}
-	var t any = (*T)(nil)
-	switch t.(type) {
-	case **osm.Node:
-		selector.Nodes = true
-	case **osm.Way:
-		selector.Ways = true
-	case **osm.Relation:
-		selector.Relations = true
-	default:
-		panic("unsupported type")
+	s := objSelector{
+		Nodes:     true,
+		Ways:      true,
+		Relations: true,
 	}
 
 	return func(yield func(T, error) bool) {
 		// this really just to prepare next chunk before it's needed, so buffer is big enough to hold a few chunks
-		chunkChan := make(chan chunk, 5)
+		chunkChan := make(chan chunk, 2)
 
 		go func() {
 			defer close(chunkChan)
@@ -39,7 +32,7 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) ite
 				}
 				readenChunks[window.Value] = struct{}{}
 
-				objects, err := db.readObjects(window.Value, selector)
+				objects, err := db.readObjects(window.Value, s)
 				chunkChan <- chunk{Objs: objects, Err: err}
 			}
 		}()

@@ -2,7 +2,6 @@ package osmblob
 
 import (
 	"iter"
-	"slices"
 	"time"
 
 	"github.com/paulmach/osm"
@@ -77,7 +76,6 @@ func (dec *ObjectDecoder) DecodeRelations() (out []*osm.Relation, err error) {
 		}
 	}
 
-	out = slices.Clip(out)
 	return out, nil
 }
 
@@ -130,7 +128,6 @@ func (dec *ObjectDecoder) DecodeWays() ([]*osm.Way, error) {
 
 	for _, group := range dec.block.GetPrimitivegroup() {
 		for _, w := range group.GetWays() {
-
 			way := &osm.Way{
 				ID:    osm.WayID(w.GetId()),
 				Nodes: dec.extractWayNodes(w),
@@ -152,10 +149,7 @@ func (dec *ObjectDecoder) DecodeWays() ([]*osm.Way, error) {
 
 			ways = append(ways, way)
 		}
-
 	}
-
-	ways = slices.Clip(ways)
 
 	return ways, nil
 }
