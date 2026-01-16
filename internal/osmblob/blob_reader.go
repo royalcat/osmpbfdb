@@ -1,7 +1,6 @@
 package osmblob
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -134,28 +133,17 @@ func getData(blob *osmproto.Blob, data []byte) ([]byte, error) {
 		return blob.GetRaw(), nil
 
 	case blob.HasZlibData():
-		r, err := zlibReader(blob.GetZlibData())
+		var err error
+		data, err = zlibDecompress(blob.GetZlibData(), int64(blob.GetRawSize()))
 		if err != nil {
 			return nil, err
 		}
 
-		// using the bytes.Buffer allows for the preallocation of the necessary space.
-		l := blob.GetRawSize() + bytes.MinRead
-		if cap(data) < int(l) {
-			data = make([]byte, 0, l+l/10)
-		} else {
-			data = data[:0]
-		}
-		buf := bytes.NewBuffer(data)
-		if _, err = buf.ReadFrom(r); err != nil {
-			return nil, err
+		if len(data) != int(blob.GetRawSize()) {
+			return nil, fmt.Errorf("raw blob data size %d but expected %d", len(data), blob.GetRawSize())
 		}
 
-		if buf.Len() != int(blob.GetRawSize()) {
-			return nil, fmt.Errorf("raw blob data size %d but expected %d", buf.Len(), blob.GetRawSize())
-		}
-
-		return buf.Bytes(), nil
+		return data, nil
 	default:
 		return nil, errors.New("unknown blob data")
 	}

@@ -4,12 +4,20 @@
 package osmblob
 
 import (
-	"bytes"
-	"io"
-
-	"github.com/datadog/czlib"
+	"github.com/4kills/go-libdeflate/v2"
 )
 
-func zlibReader(data []byte) (io.ReadCloser, error) {
-	return czlib.NewReader(bytes.NewReader(data))
+func zlibDecompress(data []byte, rawSize int64) ([]byte, error) {
+	dc, err := libdeflate.NewDecompressor()
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]byte, rawSize)
+	_, out, err = dc.Decompress(data, out, libdeflate.ModeZlib)
+	if err != nil {
+		return out, err
+	}
+
+	return out, nil
 }

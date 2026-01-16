@@ -41,16 +41,13 @@ const (
 )
 
 type Blob struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Raw               []byte                 `protobuf:"bytes,1,opt,name=raw"`
-	xxx_hidden_RawSize           int32                  `protobuf:"varint,2,opt,name=raw_size,json=rawSize"`
-	xxx_hidden_ZlibData          []byte                 `protobuf:"bytes,3,opt,name=zlib_data,json=zlibData"`
-	xxx_hidden_LzmaData          []byte                 `protobuf:"bytes,4,opt,name=lzma_data,json=lzmaData"`
-	xxx_hidden_OBSOLETEBzip2Data []byte                 `protobuf:"bytes,5,opt,name=OBSOLETE_bzip2_data,json=OBSOLETEBzip2Data"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RawSize     int32                  `protobuf:"varint,2,opt,name=raw_size,json=rawSize"`
+	xxx_hidden_Data        isBlob_Data            `protobuf_oneof:"data"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Blob) Reset() {
@@ -78,13 +75,6 @@ func (x *Blob) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *Blob) GetRaw() []byte {
-	if x != nil {
-		return x.xxx_hidden_Raw
-	}
-	return nil
-}
-
 func (x *Blob) GetRawSize() int32 {
 	if x != nil {
 		return x.xxx_hidden_RawSize
@@ -92,16 +82,29 @@ func (x *Blob) GetRawSize() int32 {
 	return 0
 }
 
+func (x *Blob) GetRaw() []byte {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Data.(*blob_Raw); ok {
+			return x.Raw
+		}
+	}
+	return nil
+}
+
 func (x *Blob) GetZlibData() []byte {
 	if x != nil {
-		return x.xxx_hidden_ZlibData
+		if x, ok := x.xxx_hidden_Data.(*blob_ZlibData); ok {
+			return x.ZlibData
+		}
 	}
 	return nil
 }
 
 func (x *Blob) GetLzmaData() []byte {
 	if x != nil {
-		return x.xxx_hidden_LzmaData
+		if x, ok := x.xxx_hidden_Data.(*blob_LzmaData); ok {
+			return x.LzmaData
+		}
 	}
 	return nil
 }
@@ -109,38 +112,55 @@ func (x *Blob) GetLzmaData() []byte {
 // Deprecated: Marked as deprecated in osmproto/fileformat.proto.
 func (x *Blob) GetOBSOLETEBzip2Data() []byte {
 	if x != nil {
-		return x.xxx_hidden_OBSOLETEBzip2Data
+		if x, ok := x.xxx_hidden_Data.(*blob_OBSOLETEBzip2Data); ok {
+			return x.OBSOLETEBzip2Data
+		}
 	}
 	return nil
+}
+
+func (x *Blob) GetLz4Data() []byte {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Data.(*blob_Lz4Data); ok {
+			return x.Lz4Data
+		}
+	}
+	return nil
+}
+
+func (x *Blob) GetZstdData() []byte {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Data.(*blob_ZstdData); ok {
+			return x.ZstdData
+		}
+	}
+	return nil
+}
+
+func (x *Blob) SetRawSize(v int32) {
+	x.xxx_hidden_RawSize = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *Blob) SetRaw(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_Raw = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
-}
-
-func (x *Blob) SetRawSize(v int32) {
-	x.xxx_hidden_RawSize = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.xxx_hidden_Data = &blob_Raw{v}
 }
 
 func (x *Blob) SetZlibData(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_ZlibData = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.xxx_hidden_Data = &blob_ZlibData{v}
 }
 
 func (x *Blob) SetLzmaData(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_LzmaData = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.xxx_hidden_Data = &blob_LzmaData{v}
 }
 
 // Deprecated: Marked as deprecated in osmproto/fileformat.proto.
@@ -148,36 +168,59 @@ func (x *Blob) SetOBSOLETEBzip2Data(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_OBSOLETEBzip2Data = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
+	x.xxx_hidden_Data = &blob_OBSOLETEBzip2Data{v}
 }
 
-func (x *Blob) HasRaw() bool {
-	if x == nil {
-		return false
+func (x *Blob) SetLz4Data(v []byte) {
+	if v == nil {
+		v = []byte{}
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Data = &blob_Lz4Data{v}
+}
+
+func (x *Blob) SetZstdData(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_Data = &blob_ZstdData{v}
 }
 
 func (x *Blob) HasRawSize() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *Blob) HasData() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Data != nil
+}
+
+func (x *Blob) HasRaw() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Data.(*blob_Raw)
+	return ok
 }
 
 func (x *Blob) HasZlibData() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	_, ok := x.xxx_hidden_Data.(*blob_ZlibData)
+	return ok
 }
 
 func (x *Blob) HasLzmaData() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	_, ok := x.xxx_hidden_Data.(*blob_LzmaData)
+	return ok
 }
 
 // Deprecated: Marked as deprecated in osmproto/fileformat.proto.
@@ -185,76 +228,208 @@ func (x *Blob) HasOBSOLETEBzip2Data() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	_, ok := x.xxx_hidden_Data.(*blob_OBSOLETEBzip2Data)
+	return ok
 }
 
-func (x *Blob) ClearRaw() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Raw = nil
+func (x *Blob) HasLz4Data() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Data.(*blob_Lz4Data)
+	return ok
+}
+
+func (x *Blob) HasZstdData() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Data.(*blob_ZstdData)
+	return ok
 }
 
 func (x *Blob) ClearRawSize() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_RawSize = 0
 }
 
+func (x *Blob) ClearData() {
+	x.xxx_hidden_Data = nil
+}
+
+func (x *Blob) ClearRaw() {
+	if _, ok := x.xxx_hidden_Data.(*blob_Raw); ok {
+		x.xxx_hidden_Data = nil
+	}
+}
+
 func (x *Blob) ClearZlibData() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ZlibData = nil
+	if _, ok := x.xxx_hidden_Data.(*blob_ZlibData); ok {
+		x.xxx_hidden_Data = nil
+	}
 }
 
 func (x *Blob) ClearLzmaData() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_LzmaData = nil
+	if _, ok := x.xxx_hidden_Data.(*blob_LzmaData); ok {
+		x.xxx_hidden_Data = nil
+	}
 }
 
 // Deprecated: Marked as deprecated in osmproto/fileformat.proto.
 func (x *Blob) ClearOBSOLETEBzip2Data() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_OBSOLETEBzip2Data = nil
+	if _, ok := x.xxx_hidden_Data.(*blob_OBSOLETEBzip2Data); ok {
+		x.xxx_hidden_Data = nil
+	}
+}
+
+func (x *Blob) ClearLz4Data() {
+	if _, ok := x.xxx_hidden_Data.(*blob_Lz4Data); ok {
+		x.xxx_hidden_Data = nil
+	}
+}
+
+func (x *Blob) ClearZstdData() {
+	if _, ok := x.xxx_hidden_Data.(*blob_ZstdData); ok {
+		x.xxx_hidden_Data = nil
+	}
+}
+
+const Blob_Data_not_set_case case_Blob_Data = 0
+const Blob_Raw_case case_Blob_Data = 1
+const Blob_ZlibData_case case_Blob_Data = 3
+const Blob_LzmaData_case case_Blob_Data = 4
+const Blob_OBSOLETEBzip2Data_case case_Blob_Data = 5
+const Blob_Lz4Data_case case_Blob_Data = 6
+const Blob_ZstdData_case case_Blob_Data = 7
+
+func (x *Blob) WhichData() case_Blob_Data {
+	if x == nil {
+		return Blob_Data_not_set_case
+	}
+	switch x.xxx_hidden_Data.(type) {
+	case *blob_Raw:
+		return Blob_Raw_case
+	case *blob_ZlibData:
+		return Blob_ZlibData_case
+	case *blob_LzmaData:
+		return Blob_LzmaData_case
+	case *blob_OBSOLETEBzip2Data:
+		return Blob_OBSOLETEBzip2Data_case
+	case *blob_Lz4Data:
+		return Blob_Lz4Data_case
+	case *blob_ZstdData:
+		return Blob_ZstdData_case
+	default:
+		return Blob_Data_not_set_case
+	}
 }
 
 type Blob_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Raw     []byte
 	RawSize *int32
+	// Fields of oneof xxx_hidden_Data:
+	Raw []byte
 	// Possible compressed versions of the data.
 	ZlibData []byte
-	// PROPOSED feature for LZMA compressed data. SUPPORT IS NOT REQUIRED.
+	// For LZMA compressed data (optional)
 	LzmaData []byte
-	// Formerly used for bzip2 compressed data. Depreciated in 2010.
+	// Formerly used for bzip2 compressed data. Deprecated in 2010.
 	//
 	// Deprecated: Marked as deprecated in osmproto/fileformat.proto.
 	OBSOLETEBzip2Data []byte
+	// For LZ4 compressed data (optional)
+	Lz4Data []byte
+	// For ZSTD compressed data (optional)
+	ZstdData []byte
+	// -- end of xxx_hidden_Data
 }
 
 func (b0 Blob_builder) Build() *Blob {
 	m0 := &Blob{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Raw != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Raw = b.Raw
-	}
 	if b.RawSize != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
 		x.xxx_hidden_RawSize = *b.RawSize
 	}
+	if b.Raw != nil {
+		x.xxx_hidden_Data = &blob_Raw{b.Raw}
+	}
 	if b.ZlibData != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_ZlibData = b.ZlibData
+		x.xxx_hidden_Data = &blob_ZlibData{b.ZlibData}
 	}
 	if b.LzmaData != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_LzmaData = b.LzmaData
+		x.xxx_hidden_Data = &blob_LzmaData{b.LzmaData}
 	}
 	if b.OBSOLETEBzip2Data != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_OBSOLETEBzip2Data = b.OBSOLETEBzip2Data
+		x.xxx_hidden_Data = &blob_OBSOLETEBzip2Data{b.OBSOLETEBzip2Data}
+	}
+	if b.Lz4Data != nil {
+		x.xxx_hidden_Data = &blob_Lz4Data{b.Lz4Data}
+	}
+	if b.ZstdData != nil {
+		x.xxx_hidden_Data = &blob_ZstdData{b.ZstdData}
 	}
 	return m0
 }
+
+type case_Blob_Data protoreflect.FieldNumber
+
+func (x case_Blob_Data) String() string {
+	md := file_osmproto_fileformat_proto_msgTypes[0].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isBlob_Data interface {
+	isBlob_Data()
+}
+
+type blob_Raw struct {
+	Raw []byte `protobuf:"bytes,1,opt,name=raw,oneof"` // No compression
+}
+
+type blob_ZlibData struct {
+	// Possible compressed versions of the data.
+	ZlibData []byte `protobuf:"bytes,3,opt,name=zlib_data,json=zlibData,oneof"`
+}
+
+type blob_LzmaData struct {
+	// For LZMA compressed data (optional)
+	LzmaData []byte `protobuf:"bytes,4,opt,name=lzma_data,json=lzmaData,oneof"`
+}
+
+type blob_OBSOLETEBzip2Data struct {
+	// Formerly used for bzip2 compressed data. Deprecated in 2010.
+	//
+	// Deprecated: Marked as deprecated in osmproto/fileformat.proto.
+	OBSOLETEBzip2Data []byte `protobuf:"bytes,5,opt,name=OBSOLETE_bzip2_data,json=OBSOLETEBzip2Data,oneof"` // Don't reuse this tag number.
+}
+
+type blob_Lz4Data struct {
+	// For LZ4 compressed data (optional)
+	Lz4Data []byte `protobuf:"bytes,6,opt,name=lz4_data,json=lz4Data,oneof"`
+}
+
+type blob_ZstdData struct {
+	// For ZSTD compressed data (optional)
+	ZstdData []byte `protobuf:"bytes,7,opt,name=zstd_data,json=zstdData,oneof"`
+}
+
+func (*blob_Raw) isBlob_Data() {}
+
+func (*blob_ZlibData) isBlob_Data() {}
+
+func (*blob_LzmaData) isBlob_Data() {}
+
+func (*blob_OBSOLETEBzip2Data) isBlob_Data() {}
+
+func (*blob_Lz4Data) isBlob_Data() {}
+
+func (*blob_ZstdData) isBlob_Data() {}
 
 type BlobHeader struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
@@ -401,13 +576,16 @@ var File_osmproto_fileformat_proto protoreflect.FileDescriptor
 
 const file_osmproto_fileformat_proto_rawDesc = "" +
 	"\n" +
-	"\x19osmproto/fileformat.proto\x12\bosmproto\"\xa1\x01\n" +
-	"\x04Blob\x12\x10\n" +
-	"\x03raw\x18\x01 \x01(\fR\x03raw\x12\x19\n" +
-	"\braw_size\x18\x02 \x01(\x05R\arawSize\x12\x1b\n" +
-	"\tzlib_data\x18\x03 \x01(\fR\bzlibData\x12\x1b\n" +
-	"\tlzma_data\x18\x04 \x01(\fR\blzmaData\x122\n" +
-	"\x13OBSOLETE_bzip2_data\x18\x05 \x01(\fB\x02\x18\x01R\x11OBSOLETEBzip2Data\"Z\n" +
+	"\x19osmproto/fileformat.proto\x12\bosmproto\"\xed\x01\n" +
+	"\x04Blob\x12\x19\n" +
+	"\braw_size\x18\x02 \x01(\x05R\arawSize\x12\x12\n" +
+	"\x03raw\x18\x01 \x01(\fH\x00R\x03raw\x12\x1d\n" +
+	"\tzlib_data\x18\x03 \x01(\fH\x00R\bzlibData\x12\x1d\n" +
+	"\tlzma_data\x18\x04 \x01(\fH\x00R\blzmaData\x124\n" +
+	"\x13OBSOLETE_bzip2_data\x18\x05 \x01(\fB\x02\x18\x01H\x00R\x11OBSOLETEBzip2Data\x12\x1b\n" +
+	"\blz4_data\x18\x06 \x01(\fH\x00R\alz4Data\x12\x1d\n" +
+	"\tzstd_data\x18\a \x01(\fH\x00R\bzstdDataB\x06\n" +
+	"\x04data\"Z\n" +
 	"\n" +
 	"BlobHeader\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1c\n" +
@@ -432,6 +610,14 @@ func init() { file_osmproto_fileformat_proto_init() }
 func file_osmproto_fileformat_proto_init() {
 	if File_osmproto_fileformat_proto != nil {
 		return
+	}
+	file_osmproto_fileformat_proto_msgTypes[0].OneofWrappers = []any{
+		(*blob_Raw)(nil),
+		(*blob_ZlibData)(nil),
+		(*blob_LzmaData)(nil),
+		(*blob_OBSOLETEBzip2Data)(nil),
+		(*blob_Lz4Data)(nil),
+		(*blob_ZstdData)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
