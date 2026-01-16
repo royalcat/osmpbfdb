@@ -14,11 +14,17 @@ var (
 	blobDataPool = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobSize) })
 )
 
-type objectDecoder struct {
+type ObjectDecoderParams struct {
+	SkipInfo bool
+}
+
+type ObjectDecoder struct {
+	ObjectDecoderParams
+
 	block *osmproto.PrimitiveBlock
 }
 
-func NewDecoderFromBlob(blob *osmproto.Blob) (*objectDecoder, error) {
+func NewDecoderFromBlob(blob *osmproto.Blob, params ObjectDecoderParams) (*ObjectDecoder, error) {
 	data := blobDataPool.Get()
 	defer blobDataPool.Put(data)
 
@@ -33,44 +39,46 @@ func NewDecoderFromBlob(blob *osmproto.Blob) (*objectDecoder, error) {
 		return nil, err
 	}
 
-	dec := &objectDecoder{
-		block: &block,
+	dec := &ObjectDecoder{
+		ObjectDecoderParams: params,
+		block:               &block,
 	}
 
 	return dec, nil
 }
 
-func (dec *objectDecoder) DecodeRelations() ([]*osm.Relation, error) {
+func (dec *ObjectDecoder) DecodeRelations() (out []*osm.Relation, err error) {
 	st := dec.block.GetStringtable()
-
-	relations := make([]*osm.Relation, 0, 8000)
+	out = make([]*osm.Relation, 0, 8000)
 
 	for _, group := range dec.block.GetPrimitivegroup() {
 		for _, relation := range group.GetRelations() {
+
 			rel := &osm.Relation{
-				ID:          osm.RelationID(relation.GetId()),
-				Version:     int(relation.Info.GetVersion()),
-				ChangesetID: osm.ChangesetID(relation.Info.GetChangeset()),
-				UserID:      osm.UserID(relation.Info.GetUid()),
-				User:        st.GetS()[relation.Info.GetUserSid()],
-				Visible:     relation.GetInfo().GetVisible(),
-				Tags:        extractTags(st, relation.Keys, relation.Vals),
+				ID:   osm.RelationID(relation.GetId()),
+				Tags: extractTags(st, relation.GetKeys(), relation.GetVals()),
 			}
 
-			members, err := extractMembers2(st.GetS(), relation.GetRolesSid(), relation.GetMemids(), relation.GetTypes())
+			if !dec.SkipInfo {
+				info := relation.GetInfo()
+				rel.Version = int(info.GetVersion())
+				rel.ChangesetID = osm.ChangesetID(info.GetChangeset())
+				rel.UserID = osm.UserID(info.GetUid())
+				rel.User = st.GetS()[info.GetUserSid()]
+				rel.Visible = info.GetVisible()
+			}
+
+			rel.Members, err = extractMembers(st.GetS(), relation.GetRolesSid(), relation.GetMemids(), relation.GetTypes())
 			if err != nil {
 				return nil, err
 			}
 
-			rel.Members = members
-
-			relations = append(relations, rel)
+			out = append(out, rel)
 		}
 	}
 
-	relations = slices.Clip(relations)
-
-	return relations, nil
+	out = slices.Clip(out)
+	return out, nil
 }
 
 func extractTags(st *osmproto.StringTable, keys, values []uint32) osm.Tags {
@@ -84,7 +92,7 @@ func extractTags(st *osmproto.StringTable, keys, values []uint32) osm.Tags {
 	return tags
 }
 
-func extractMembers2(
+func extractMembers(
 	st []string,
 	roles []int32,
 	memids []int64,
@@ -114,27 +122,32 @@ func extractMembers2(
 	return members, nil
 }
 
-func (dec *objectDecoder) DecodeWays() ([]*osm.Way, error) {
+func (dec *ObjectDecoder) DecodeWays() ([]*osm.Way, error) {
 	dateGranularity := int64(dec.block.GetDateGranularity())
+	st := dec.block.GetStringtable()
 
 	ways := make([]*osm.Way, 0, 8000)
 
 	for _, group := range dec.block.GetPrimitivegroup() {
 		for _, w := range group.GetWays() {
 
-			millisec := time.Duration(w.GetInfo().GetTimestamp()*dateGranularity) * time.Millisecond
-			timestamp := time.Unix(0, millisec.Nanoseconds()).UTC()
-
 			way := &osm.Way{
-				ID:          osm.WayID(w.GetId()),
-				User:        dec.block.GetStringtable().GetS()[w.GetInfo().GetUserSid()],
-				UserID:      osm.UserID(w.GetInfo().GetUid()),
-				Visible:     w.GetInfo().GetVisible(),
-				Version:     int(w.GetInfo().GetVersion()),
-				ChangesetID: osm.ChangesetID(w.GetInfo().GetVersion()),
-				Timestamp:   timestamp,
-				Nodes:       dec.extractWayNodes(w),
-				Tags:        extractTags(dec.block.Stringtable, w.GetKeys(), w.GetVals()),
+				ID:    osm.WayID(w.GetId()),
+				Nodes: dec.extractWayNodes(w),
+				Tags:  extractTags(st, w.GetKeys(), w.GetVals()),
+			}
+
+			if !dec.SkipInfo {
+				info := w.GetInfo()
+				way.User = st.GetS()[info.GetUserSid()]
+				way.UserID = osm.UserID(info.GetUid())
+				way.Visible = info.GetVisible()
+				way.Version = int(info.GetVersion())
+				way.ChangesetID = osm.ChangesetID(info.GetChangeset())
+
+				millisec := time.Duration(w.GetInfo().GetTimestamp()*dateGranularity) * time.Millisecond
+				timestamp := time.Unix(0, millisec.Nanoseconds()).UTC()
+				way.Timestamp = timestamp
 			}
 
 			ways = append(ways, way)
@@ -147,7 +160,7 @@ func (dec *objectDecoder) DecodeWays() ([]*osm.Way, error) {
 	return ways, nil
 }
 
-func (dec *objectDecoder) extractWayNodes(way *osmproto.Way) osm.WayNodes {
+func (dec *ObjectDecoder) extractWayNodes(way *osmproto.Way) osm.WayNodes {
 	granularity := int64(dec.block.GetGranularity())
 	latOffset := dec.block.GetLatOffset()
 	lonOffset := dec.block.GetLonOffset()
@@ -166,23 +179,29 @@ func (dec *objectDecoder) extractWayNodes(way *osmproto.Way) osm.WayNodes {
 			lon = 1e-9 * float64(lonOffset+(granularity*lons[i]))
 		}
 
-		nodes = append(nodes, osm.WayNode{
-			ID:          osm.NodeID(ref),
-			Lat:         lat,
-			Lon:         lon,
-			Version:     int(way.GetInfo().GetVersion()),
-			ChangesetID: osm.ChangesetID(way.GetInfo().GetChangeset()),
-		})
+		wayNode := osm.WayNode{
+			ID:  osm.NodeID(ref),
+			Lat: lat,
+			Lon: lon,
+		}
+
+		if !dec.SkipInfo {
+			info := way.GetInfo()
+			wayNode.Version = int(info.GetVersion())
+			wayNode.ChangesetID = osm.ChangesetID(info.GetChangeset())
+		}
+
+		nodes = append(nodes, wayNode)
 	}
 
 	return nodes
 }
 
-func (dec *objectDecoder) DecodeNodes() ([]*osm.Node, error) {
+func (dec *ObjectDecoder) DecodeNodes() ([]*osm.Node, error) {
 	nodes := make([]*osm.Node, 0, 8000)
 
 	for _, group := range dec.block.GetPrimitivegroup() {
-		for node := range extractDenseNodes(dec.block, group.GetDense()) {
+		for node := range dec.extractDenseNodes(dec.block, group.GetDense()) {
 			nodes = append(nodes, node)
 		}
 
@@ -192,15 +211,14 @@ func (dec *objectDecoder) DecodeNodes() ([]*osm.Node, error) {
 		// }
 	}
 
-	nodes = slices.Clip(nodes)
+	// MAYBE panic in ci for some reason
+	// nodes = slices.Clip(nodes)
 
 	return nodes, nil
 }
 
-func extractDenseNodes(primitiveBlock *osmproto.PrimitiveBlock, denseNodes *osmproto.DenseNodes) iter.Seq[*osm.Node] {
-
+func (dec *ObjectDecoder) extractDenseNodes(primitiveBlock *osmproto.PrimitiveBlock, denseNodes *osmproto.DenseNodes) iter.Seq[*osm.Node] {
 	return func(yield func(*osm.Node) bool) {
-
 		st := primitiveBlock.GetStringtable().GetS()
 		granularity := int64(primitiveBlock.GetGranularity())
 		dateGranularity := int64(primitiveBlock.GetDateGranularity())
@@ -208,29 +226,46 @@ func extractDenseNodes(primitiveBlock *osmproto.PrimitiveBlock, denseNodes *osmp
 		latOffset := primitiveBlock.GetLatOffset()
 		lonOffset := primitiveBlock.GetLonOffset()
 
-		info := denseNodes.GetDenseinfo()
+		var info *osmproto.DenseInfo
+		if !dec.SkipInfo {
+			info = denseNodes.GetDenseinfo()
+		}
 
 		keyvals := denseNodes.GetKeysVals()
-		kvs := make([]map[int32]int32, 1, len(keyvals)/2)
-		kvs[0] = map[int32]int32{}
-		current := 0
-		i := 0
-		for i < len(keyvals) {
-			k := keyvals[i]
-			if k == 0 {
-				kvs = append(kvs, map[int32]int32{})
-				current++
-				i++
-				continue
-			}
-			if i+2 > len(keyvals) {
-				break
-			}
-			v := keyvals[i+1]
+		kvs := map[int32]int32{}
+		kvsIdx := 0
+		kvsMoveNext := func() {
+			clear(kvs)
 
-			kvs[current][k] = v
-			i += 2
+			for keyvals[kvsIdx] != 0 {
+				k := keyvals[kvsIdx]
+				v := keyvals[kvsIdx+1]
+				kvs[k] = v
+				kvsIdx += 2
+			}
+			kvsIdx++
 		}
+
+		// kvs := make([]map[int32]int32, 1, len(keyvals)/2)
+		// kvs[0] = map[int32]int32{}
+		// current := 0
+		// i := 0
+		// for i < len(keyvals) {
+		// 	k := keyvals[i]
+		// 	if k == 0 {
+		// 		kvs = append(kvs, map[int32]int32{})
+		// 		current++
+		// 		i++
+		// 		continue
+		// 	}
+		// 	if i+2 > len(keyvals) {
+		// 		break
+		// 	}
+		// 	v := keyvals[i+1]
+
+		// 	kvs[current][k] = v
+		// 	i += 2
+		// }
 
 		// NOTE: do not try pre-allocating an array of nodes because saving
 		// just one will stop the GC from cleaning up the whole pre-allocated array.
@@ -241,33 +276,37 @@ func extractDenseNodes(primitiveBlock *osmproto.PrimitiveBlock, denseNodes *osmp
 		for i, dID := range denseNodes.GetId() {
 			id += dID
 			n.ID = osm.NodeID(id)
-			n.Version = int(info.GetVersion()[i])
 
-			timestamp += info.GetTimestamp()[i]
-			millisec := time.Duration(timestamp*dateGranularity) * time.Millisecond
-			n.Timestamp = time.Unix(0, millisec.Nanoseconds()).UTC()
+			if !dec.SkipInfo {
+				n.Version = int(info.GetVersion()[i])
 
-			changeset += info.GetChangeset()[i]
-			n.ChangesetID = osm.ChangesetID(changeset)
+				timestamp += info.GetTimestamp()[i]
+				millisec := time.Duration(timestamp*dateGranularity) * time.Millisecond
+				n.Timestamp = time.Unix(0, millisec.Nanoseconds()).UTC()
 
-			uid += info.GetUid()[i]
-			n.UserID = osm.UserID(uid)
+				changeset += info.GetChangeset()[i]
+				n.ChangesetID = osm.ChangesetID(changeset)
 
-			usid += info.GetUserSid()[i]
-			n.User = st[usid]
+				uid += info.GetUid()[i]
+				n.UserID = osm.UserID(uid)
 
-			if visible := info.GetVisible(); i < len(visible) {
-				n.Visible = visible[i]
+				usid += info.GetUserSid()[i]
+				n.User = st[usid]
+
+				if visible := info.GetVisible(); i < len(visible) {
+					n.Visible = visible[i]
+				}
 			}
 
-			lat += denseNodes.Lat[i]
+			lat += denseNodes.GetLat()[i]
 			n.Lat = 1e-9 * float64(latOffset+(granularity*lat))
-			lon += denseNodes.Lon[i]
+			lon += denseNodes.GetLon()[i]
 			n.Lon = 1e-9 * float64(lonOffset+(granularity*lon))
 
+			kvsMoveNext()
 			if i < len(kvs) {
-				n.Tags = make([]osm.Tag, 0, len(kvs[i]))
-				for k, v := range kvs[i] {
+				n.Tags = make([]osm.Tag, 0, len(kvs))
+				for k, v := range kvs {
 					n.Tags = append(n.Tags, osm.Tag{Key: st[k], Value: st[v]})
 				}
 			}

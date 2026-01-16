@@ -130,10 +130,10 @@ func (dec *BlobReader) readBlob(buf []byte, off int64) (*osmproto.Blob, error) {
 
 func getData(blob *osmproto.Blob, data []byte) ([]byte, error) {
 	switch {
-	case blob.Raw != nil:
+	case blob.HasRaw():
 		return blob.GetRaw(), nil
 
-	case blob.ZlibData != nil:
+	case blob.HasZlibData():
 		r, err := zlibReader(blob.GetZlibData())
 		if err != nil {
 			return nil, err
@@ -203,17 +203,17 @@ func DecodeOSMHeader(blob *osmproto.Blob) (*Header, error) {
 	}
 
 	// convert timestamp epoch seconds to golang time structure if it exists
-	if headerBlock.OsmosisReplicationTimestamp != nil {
-		header.ReplicationTimestamp = time.Unix(*headerBlock.OsmosisReplicationTimestamp, 0).UTC()
+	if headerBlock.HasOsmosisReplicationTimestamp() {
+		header.ReplicationTimestamp = time.Unix(headerBlock.GetOsmosisReplicationTimestamp(), 0).UTC()
 	}
 	// read bounding box if it exists
-	if headerBlock.Bbox != nil {
+	if bbox := headerBlock.GetBbox(); bbox != nil {
 		// Units are always in nanodegree and do not obey granularity rules. See osmformat.proto
 		header.Bounds = &osm.Bounds{
-			MinLon: 1e-9 * float64(*headerBlock.Bbox.Left),
-			MaxLon: 1e-9 * float64(*headerBlock.Bbox.Right),
-			MinLat: 1e-9 * float64(*headerBlock.Bbox.Bottom),
-			MaxLat: 1e-9 * float64(*headerBlock.Bbox.Top),
+			MinLon: 1e-9 * float64(bbox.GetLeft()),
+			MaxLon: 1e-9 * float64(bbox.GetRight()),
+			MinLat: 1e-9 * float64(bbox.GetBottom()),
+			MaxLat: 1e-9 * float64(bbox.GetTop()),
 		}
 	}
 

@@ -21,6 +21,8 @@ type DB struct {
 
 	indexes *Indexes
 
+	skipInfo bool
+
 	log *slog.Logger
 }
 
@@ -44,6 +46,7 @@ func hashInput(r io.ReaderAt) (string, error) {
 type Config struct {
 	IndexDir  string    // default is "./osm-index"
 	CacheType CacheType // default "lru"
+	SkipInfo  bool      // Skip info decoding osm objects inf (version, changeset, user name and id)
 	Logger    *slog.Logger
 }
 
@@ -76,6 +79,7 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	db := &DB{
 		blobReader: osmblob.NewBlobReader(r),
 		readCache:  readCache,
+		skipInfo:   config.SkipInfo,
 		log:        config.Logger,
 	}
 
@@ -104,6 +108,10 @@ func (db *DB) readObjects(offset uint32, selector objSelector) ([]osm.Object, er
 	// if ok {
 	// 	return objects, nil
 	// }
+	//
+	objDecoderParams := osmblob.ObjectDecoderParams{
+		SkipInfo: db.skipInfo,
+	}
 
 	objects, err, _ := db.readGroup.Do(offset, func() ([]osm.Object, error) {
 		// additional check if cache was filled between previous check and group start
@@ -117,7 +125,7 @@ func (db *DB) readObjects(offset uint32, selector objSelector) ([]osm.Object, er
 			return nil, fmt.Errorf("read file block: %w", err)
 		}
 
-		dec, err := osmblob.NewDecoderFromBlob(blob)
+		dec, err := osmblob.NewDecoderFromBlob(blob, objDecoderParams)
 		if err != nil {
 			return nil, fmt.Errorf("create decoder: %w", err)
 		}

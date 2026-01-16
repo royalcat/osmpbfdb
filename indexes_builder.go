@@ -103,8 +103,12 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 	})
 
 	group.Go(func() error {
+		objDecoderParams := osmblob.ObjectDecoderParams{
+			SkipInfo: true,
+		}
+
 		for blobAt := range blobChan {
-			objDec, err := osmblob.NewDecoderFromBlob(blobAt.blob)
+			objDec, err := osmblob.NewDecoderFromBlob(blobAt.blob, objDecoderParams)
 			if err != nil {
 				log.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
 				return nil
