@@ -1,15 +1,14 @@
 package osmblob
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/paulmach/osm"
 	"github.com/royalcat/osmpbfdb/osmproto"
-	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -110,20 +109,15 @@ func (dec *BlobReader) readBlobHeader(off int64, blobHeaderSize uint32) (*osmpro
 }
 
 var (
-	blobBufPool        = newSyncPool(func() []byte { return make([]byte, MaxBlobSize) })
-	readBlobMemLimiter = semaphore.NewWeighted((128 * 1024 * 1024) / MaxBlobSize)
+	blobBuf   = make([]byte, MaxBlobSize)
+	blobBufMu sync.Mutex
 )
 
 func (dec *BlobReader) readBlob(off int64, blobSize int32) (*osmproto.Blob, error) {
-	if err := readBlobMemLimiter.Acquire(context.Background(), 1); err != nil {
-		return nil, err
-	}
-	defer readBlobMemLimiter.Release(1)
+	blobBufMu.Lock()
+	defer blobBufMu.Unlock()
 
-	buf := blobBufPool.Get()
-	defer blobBufPool.Put(buf)
-
-	buf = buf[:blobSize]
+	buf := blobBuf[:blobSize]
 
 	n, err := dec.r.ReadAt(buf, off)
 	if err != nil {

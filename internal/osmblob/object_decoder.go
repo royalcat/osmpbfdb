@@ -11,8 +11,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+func allocBlobData() []byte {
+	return make([]byte, MaxBlobSize)
+}
+
 var (
-	blobDataPool = newSyncPool(func() []byte { return make([]byte, MaxBlobSize) })
+	blobDataPool = newSyncPool(allocBlobData)
 )
 
 const decoderExtractLimit = (128 * 1024 * 1024) / (MaxBlobSize * 4) // 4 is arbitary compression ratio

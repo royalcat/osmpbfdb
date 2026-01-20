@@ -10,17 +10,20 @@ import (
 	"slices"
 )
 
-func zlibDecompress(data []byte, rawSize int64) ([]byte, error) {
+func zlibDecompress(data []byte, rawSize int64, out []byte) ([]byte, error) {
 	zlibReader, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return nil, err
+		return out, err
 	}
 	defer zlibReader.Close()
 
-	data := slices.Grow(data, int(rawSize))
-	_, err = io.ReadFull(zlibReader, data)
+	out = slices.Grow(out, int(rawSize))[:rawSize]
+	if out == nil {
+		out = make([]byte, int(rawSize))
+	}
+	_, err = io.ReadFull(zlibReader, out)
 	if err != nil {
-		return nil, err
+		return out, err
 	}
 
 	return out, nil

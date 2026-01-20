@@ -14,7 +14,7 @@ func extractData(blob *osmproto.Blob, data []byte) ([]byte, error) {
 
 	case blob.HasZlibData():
 		var err error
-		data, err = zlibDecompress(blob.GetZlibData(), int64(blob.GetRawSize()))
+		data, err = zlibDecompress(blob.GetZlibData(), int64(blob.GetRawSize()), data)
 		if err != nil {
 			return nil, err
 		}

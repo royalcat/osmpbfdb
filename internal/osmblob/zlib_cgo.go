@@ -9,13 +9,16 @@ import (
 	"github.com/4kills/go-libdeflate/v2"
 )
 
-func zlibDecompress(data []byte, rawSize int64) ([]byte, error) {
+func zlibDecompress(data []byte, rawSize int64, out []byte) ([]byte, error) {
 	dc, err := libdeflate.NewDecompressor()
 	if err != nil {
-		return nil, err
+		return out, err
 	}
 
-	out := slices.Grow(data, int(rawSize))[:rawSize]
+	out = slices.Grow(out, int(rawSize))[:rawSize]
+	if out == nil {
+		out = make([]byte, int(rawSize))
+	}
 	_, out, err = dc.Decompress(data, out, libdeflate.ModeZlib)
 	if err != nil {
 		return out, err
