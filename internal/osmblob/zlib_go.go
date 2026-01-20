@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"io"
+	"slices"
 )
 
 func zlibDecompress(data []byte, rawSize int64) ([]byte, error) {
@@ -16,8 +17,8 @@ func zlibDecompress(data []byte, rawSize int64) ([]byte, error) {
 	}
 	defer zlibReader.Close()
 
-	out := make([]byte, rawSize)
-	_, err = io.ReadFull(zlibReader, out)
+	data := slices.Grow(data, int(rawSize))
+	_, err = io.ReadFull(zlibReader, data)
 	if err != nil {
 		return nil, err
 	}

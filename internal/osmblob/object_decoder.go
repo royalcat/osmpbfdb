@@ -1,17 +1,23 @@
 package osmblob
 
 import (
+	"context"
 	"iter"
 	"time"
 
 	"github.com/paulmach/osm"
 	"github.com/royalcat/osmpbfdb/osmproto"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/proto"
 )
 
 var (
-	blobDataPool = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobSize) })
+	blobDataPool = newSyncPool(func() []byte { return make([]byte, MaxBlobSize) })
 )
+
+const decoderExtractLimit = (128 * 1024 * 1024) / (MaxBlobSize * 4) // 4 is arbitary compression ratio
+
+var decoderExtractSemaphore = semaphore.NewWeighted(decoderExtractLimit)
 
 type ObjectDecoderParams struct {
 	SkipInfo bool
@@ -24,10 +30,17 @@ type ObjectDecoder struct {
 }
 
 func NewDecoderFromBlob(blob *osmproto.Blob, params ObjectDecoderParams) (*ObjectDecoder, error) {
-	data := blobDataPool.Get()
-	defer blobDataPool.Put(data)
+	if err := decoderExtractSemaphore.Acquire(context.Background(), 1); err != nil {
+		return nil, err
+	}
+	defer decoderExtractSemaphore.Release(1)
 
-	data, err := getData(blob, data)
+	data := blobDataPool.Get()
+	defer func() {
+		blobDataPool.Put(data)
+	}()
+
+	data, err := extractData(blob, data)
 	if err != nil {
 		return nil, err
 	}

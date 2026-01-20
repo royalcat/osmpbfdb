@@ -1,6 +1,7 @@
 package osmblob
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/paulmach/osm"
 	"github.com/royalcat/osmpbfdb/osmproto"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -31,11 +33,6 @@ const (
 	OsmDataType   = "OSMData"
 )
 
-var (
-	headerBufPool = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobHeaderSize) })
-	blobBufPool   = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobSize) })
-)
-
 type BlobReader struct {
 	r io.ReaderAt
 }
@@ -45,24 +42,17 @@ func NewBlobReader(r io.ReaderAt) *BlobReader {
 }
 
 func (dec *BlobReader) ReadFileBlock(off int64) (int64, *osmproto.BlobHeader, *osmproto.Blob, error) {
-	headerBuf := headerBufPool.Get()
-	defer headerBufPool.Put(headerBuf)
-	blobBuf := blobBufPool.Get()
-	defer blobBufPool.Put(blobBuf)
-
 	blobHeaderSize, err := dec.readBlobHeaderSize(off)
 	if err != nil {
 		return 0, nil, nil, err
 	}
 
-	headerBuf = headerBuf[:blobHeaderSize]
-	blobHeader, err := dec.readBlobHeader(headerBuf, off+sizeBufSize)
+	blobHeader, err := dec.readBlobHeader(off+sizeBufSize, blobHeaderSize)
 	if err != nil {
 		return 0, nil, nil, err
 	}
 
-	blobBuf = blobBuf[:blobHeader.GetDatasize()]
-	blob, err := dec.readBlob(blobBuf, off+sizeBufSize+int64(blobHeaderSize))
+	blob, err := dec.readBlob(off+sizeBufSize+int64(blobHeaderSize), blobHeader.GetDatasize())
 	if err != nil {
 		return 0, nil, nil, err
 	}
@@ -74,7 +64,6 @@ func (dec *BlobReader) ReadFileBlock(off int64) (int64, *osmproto.BlobHeader, *o
 
 func (dec *BlobReader) readBlobHeaderSize(off int64) (uint32, error) {
 	var buf [sizeBufSize]byte
-
 	n, err := dec.r.ReadAt(buf[:], off)
 	if err != nil {
 		return 0, err
@@ -91,7 +80,16 @@ func (dec *BlobReader) readBlobHeaderSize(off int64) (uint32, error) {
 	return size, nil
 }
 
-func (dec *BlobReader) readBlobHeader(buf []byte, off int64) (*osmproto.BlobHeader, error) {
+var (
+	headerBufPool = newSyncPool(func() []byte { return make([]byte, MaxBlobHeaderSize) })
+)
+
+func (dec *BlobReader) readBlobHeader(off int64, blobHeaderSize uint32) (*osmproto.BlobHeader, error) {
+	buf := headerBufPool.Get()
+	defer headerBufPool.Put(buf)
+
+	buf = buf[:blobHeaderSize]
+
 	n, err := dec.r.ReadAt(buf, off)
 	if err != nil {
 		return nil, err
@@ -111,7 +109,22 @@ func (dec *BlobReader) readBlobHeader(buf []byte, off int64) (*osmproto.BlobHead
 	return blobHeader, nil
 }
 
-func (dec *BlobReader) readBlob(buf []byte, off int64) (*osmproto.Blob, error) {
+var (
+	blobBufPool        = newSyncPool(func() []byte { return make([]byte, MaxBlobSize) })
+	readBlobMemLimiter = semaphore.NewWeighted((128 * 1024 * 1024) / MaxBlobSize)
+)
+
+func (dec *BlobReader) readBlob(off int64, blobSize int32) (*osmproto.Blob, error) {
+	if err := readBlobMemLimiter.Acquire(context.Background(), 1); err != nil {
+		return nil, err
+	}
+	defer readBlobMemLimiter.Release(1)
+
+	buf := blobBufPool.Get()
+	defer blobBufPool.Put(buf)
+
+	buf = buf[:blobSize]
+
 	n, err := dec.r.ReadAt(buf, off)
 	if err != nil {
 		return nil, err
@@ -127,28 +140,6 @@ func (dec *BlobReader) readBlob(buf []byte, off int64) (*osmproto.Blob, error) {
 	return blob, nil
 }
 
-func getData(blob *osmproto.Blob, data []byte) ([]byte, error) {
-	switch {
-	case blob.HasRaw():
-		return blob.GetRaw(), nil
-
-	case blob.HasZlibData():
-		var err error
-		data, err = zlibDecompress(blob.GetZlibData(), int64(blob.GetRawSize()))
-		if err != nil {
-			return nil, err
-		}
-
-		if len(data) != int(blob.GetRawSize()) {
-			return nil, fmt.Errorf("raw blob data size %d but expected %d", len(data), blob.GetRawSize())
-		}
-
-		return data, nil
-	default:
-		return nil, errors.New("unknown blob data")
-	}
-}
-
 // Header contains the contents of the header in the pbf file.
 type Header struct {
 	Bounds               *osm.Bounds
@@ -162,7 +153,7 @@ type Header struct {
 }
 
 func DecodeOSMHeader(blob *osmproto.Blob) (*Header, error) {
-	data, err := getData(blob, nil)
+	data, err := extractData(blob, nil)
 	if err != nil {
 		return nil, err
 	}
