@@ -14,6 +14,7 @@ func zlibDecompress(data []byte, rawSize int64, out []byte) ([]byte, error) {
 	if err != nil {
 		return out, err
 	}
+	defer dc.Close()
 
 	out = slices.Grow(out, int(rawSize))[:rawSize]
 	if out == nil {
