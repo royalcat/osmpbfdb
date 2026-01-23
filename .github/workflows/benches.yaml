@@ -4,6 +4,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+      - name: Install libdeflate
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdeflate-dev libdeflate0
       - name: checkout
         uses: actions/checkout@v2
       - name: Setup Go
