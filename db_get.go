@@ -16,7 +16,7 @@ func (db *DB) GetNode(id osm.NodeID) (*osm.Node, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(offset)
+	objects, err := db.readObjects(offset, objSelector{Nodes: true})
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (db *DB) GetWay(id osm.WayID) (*osm.Way, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(offset)
+	objects, err := db.readObjects(offset, objSelector{Ways: true})
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (db *DB) GetRelation(id osm.RelationID) (*osm.Relation, error) {
 		return nil, ErrNotFound
 	}
 
-	objects, err := db.readObjects(offset)
+	objects, err := db.readObjects(offset, objSelector{Relations: true})
 	if err != nil {
 		return nil, err
 	}

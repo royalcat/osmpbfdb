@@ -39,8 +39,6 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 		}
 	}
 
-	dd := &osmblob.DataDecoder{}
-
 	// objectIndexBuilder := indexBuilder[osm.ObjectID, int64]{}
 	nodeIndexFile, err := os.OpenFile(path.Join(indexDir, "nodes"), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
@@ -105,23 +103,42 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 	})
 
 	group.Go(func() error {
+		objDecoderParams := osmblob.ObjectDecoderParams{
+			SkipInfo: true,
+		}
+
 		for blobAt := range blobChan {
-			objects, err := dd.Decode(blobAt.blob)
+			objDec, err := osmblob.NewDecoderFromBlob(blobAt.blob, objDecoderParams)
 			if err != nil {
 				log.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
 				return nil
 			}
 
-			for _, obj := range objects {
-				// objectIndexBuilder.Add(obj.ObjectID(), bytesRead)
-				switch obj := obj.(type) {
-				case *osm.Node:
-					nodeIndexBuilder.Add(obj.ID, uint32(blobAt.offset))
-				case *osm.Way:
-					wayIndexBuilder.Add(obj.ID, uint32(blobAt.offset))
-				case *osm.Relation:
-					relationIndexBuilder.Add(obj.ID, uint32(blobAt.offset))
-				}
+			nodes, err := objDec.DecodeNodes()
+			if err != nil {
+				log.Error("failed to get nodes from blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				return nil
+			}
+			for _, node := range nodes {
+				nodeIndexBuilder.Add(node.ID, uint32(blobAt.offset))
+			}
+
+			ways, err := objDec.DecodeWays()
+			if err != nil {
+				log.Error("failed to get ways from blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				return nil
+			}
+			for _, way := range ways {
+				wayIndexBuilder.Add(way.ID, uint32(blobAt.offset))
+			}
+
+			relations, err := objDec.DecodeRelations()
+			if err != nil {
+				log.Error("failed to get relations from blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				return nil
+			}
+			for _, relation := range relations {
+				relationIndexBuilder.Add(relation.ID, uint32(blobAt.offset))
 			}
 		}
 

@@ -21,6 +21,8 @@ type DB struct {
 
 	indexes *Indexes
 
+	skipInfo bool
+
 	log *slog.Logger
 }
 
@@ -44,6 +46,7 @@ func hashInput(r io.ReaderAt) (string, error) {
 type Config struct {
 	IndexDir  string    // default is "./osm-index"
 	CacheType CacheType // default "lru"
+	SkipInfo  bool      // Skip info decoding osm objects inf (version, changeset, user name and id)
 	Logger    *slog.Logger
 }
 
@@ -76,6 +79,7 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	db := &DB{
 		blobReader: osmblob.NewBlobReader(r),
 		readCache:  readCache,
+		skipInfo:   config.SkipInfo,
 		log:        config.Logger,
 	}
 
@@ -93,10 +97,20 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	return db, nil
 }
 
-func (db *DB) readObjects(offset uint32) ([]osm.Object, error) {
-	objects, ok := db.readCache.Get(offset)
-	if ok {
-		return objects, nil
+type objSelector struct {
+	Nodes     bool
+	Ways      bool
+	Relations bool
+}
+
+func (db *DB) readObjects(offset uint32, selector objSelector) ([]osm.Object, error) {
+	// objects, ok := db.readCache.Get(offset)
+	// if ok {
+	// 	return objects, nil
+	// }
+	//
+	objDecoderParams := osmblob.ObjectDecoderParams{
+		SkipInfo: db.skipInfo,
 	}
 
 	objects, err, _ := db.readGroup.Do(offset, func() ([]osm.Object, error) {
@@ -106,9 +120,44 @@ func (db *DB) readObjects(offset uint32) ([]osm.Object, error) {
 			return objects, nil
 		}
 
-		objects, err := db.blobReader.ReadObjects(int64(offset))
+		_, _, blob, err := db.blobReader.ReadFileBlock(int64(offset))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("read file block: %w", err)
+		}
+
+		dec, err := osmblob.NewDecoderFromBlob(blob, objDecoderParams)
+		if err != nil {
+			return nil, fmt.Errorf("create decoder: %w", err)
+		}
+
+		if selector.Nodes {
+			nodes, err := dec.DecodeNodes()
+			if err != nil {
+				return nil, fmt.Errorf("decode nodes: %w", err)
+			}
+			for _, node := range nodes {
+				objects = append(objects, node)
+			}
+		}
+
+		if selector.Ways {
+			ways, err := dec.DecodeWays()
+			if err != nil {
+				return nil, fmt.Errorf("decode ways: %w", err)
+			}
+			for _, way := range ways {
+				objects = append(objects, way)
+			}
+		}
+
+		if selector.Relations {
+			relations, err := dec.DecodeRelations()
+			if err != nil {
+				return nil, fmt.Errorf("decode relations: %w", err)
+			}
+			for _, relation := range relations {
+				objects = append(objects, relation)
+			}
 		}
 
 		db.readCache.Set(offset, objects)

@@ -12,7 +12,10 @@ func TestCount(t *testing.T) {
 	t.Run("nodes", func(t *testing.T) {
 		t.Logf("counting by iterating over db")
 		var iterCount int64
-		for range d.IterNodes() {
+		for _, err := range d.IterNodes() {
+			if err != nil {
+				t.Fatal(err)
+			}
 			iterCount++
 		}
 
@@ -27,7 +30,10 @@ func TestCount(t *testing.T) {
 	t.Run("ways", func(t *testing.T) {
 		t.Logf("counting by iterating over db")
 		var iterCount int64
-		for range d.IterWays() {
+		for _, err := range d.IterWays() {
+			if err != nil {
+				t.Fatal(err)
+			}
 			iterCount++
 		}
 
@@ -42,7 +48,10 @@ func TestCount(t *testing.T) {
 	t.Run("relations", func(t *testing.T) {
 		t.Logf("counting by iterating over db")
 		var iterCount int64
-		for range d.IterRelations() {
+		for _, err := range d.IterRelations() {
+			if err != nil {
+				t.Fatal(err)
+			}
 			iterCount++
 		}
 

@@ -3,13 +3,12 @@ module github.com/royalcat/osmpbfdb
 go 1.24.5
 
 require (
-	github.com/datadog/czlib v0.0.0-20160811164712-4bc9a24e37f2
+	github.com/4kills/go-libdeflate/v2 v2.2.1
 	github.com/edsrzf/mmap-go v1.2.0
 	github.com/goware/singleflight v0.3.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/paulmach/osm v0.8.0
-	github.com/paulmach/protoscan v0.2.1
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.19.0
 	google.golang.org/protobuf v1.36.6
 )
 

@@ -1,10 +1,10 @@
 package osmblob
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/paulmach/osm"
@@ -32,12 +32,6 @@ const (
 	OsmDataType   = "OSMData"
 )
 
-var (
-	headerBufPool   = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobHeaderSize) })
-	blobBufPool     = newSyncPool[[]byte](func() []byte { return make([]byte, MaxBlobSize) })
-	dataDecoderPool = newSyncPool[*DataDecoder](func() *DataDecoder { return &DataDecoder{} })
-)
-
 type BlobReader struct {
 	r io.ReaderAt
 }
@@ -47,24 +41,17 @@ func NewBlobReader(r io.ReaderAt) *BlobReader {
 }
 
 func (dec *BlobReader) ReadFileBlock(off int64) (int64, *osmproto.BlobHeader, *osmproto.Blob, error) {
-	headerBuf := headerBufPool.Get()
-	defer headerBufPool.Put(headerBuf)
-	blobBuf := blobBufPool.Get()
-	defer blobBufPool.Put(blobBuf)
-
 	blobHeaderSize, err := dec.readBlobHeaderSize(off)
 	if err != nil {
 		return 0, nil, nil, err
 	}
 
-	headerBuf = headerBuf[:blobHeaderSize]
-	blobHeader, err := dec.readBlobHeader(headerBuf, off+sizeBufSize)
+	blobHeader, err := dec.readBlobHeader(off+sizeBufSize, blobHeaderSize)
 	if err != nil {
 		return 0, nil, nil, err
 	}
 
-	blobBuf = blobBuf[:blobHeader.GetDatasize()]
-	blob, err := dec.readBlob(blobBuf, off+sizeBufSize+int64(blobHeaderSize))
+	blob, err := dec.readBlob(off+sizeBufSize+int64(blobHeaderSize), blobHeader.GetDatasize())
 	if err != nil {
 		return 0, nil, nil, err
 	}
@@ -76,7 +63,6 @@ func (dec *BlobReader) ReadFileBlock(off int64) (int64, *osmproto.BlobHeader, *o
 
 func (dec *BlobReader) readBlobHeaderSize(off int64) (uint32, error) {
 	var buf [sizeBufSize]byte
-
 	n, err := dec.r.ReadAt(buf[:], off)
 	if err != nil {
 		return 0, err
@@ -93,7 +79,16 @@ func (dec *BlobReader) readBlobHeaderSize(off int64) (uint32, error) {
 	return size, nil
 }
 
-func (dec *BlobReader) readBlobHeader(buf []byte, off int64) (*osmproto.BlobHeader, error) {
+var (
+	headerBufPool = newSyncPool(func() []byte { return make([]byte, MaxBlobHeaderSize) })
+)
+
+func (dec *BlobReader) readBlobHeader(off int64, blobHeaderSize uint32) (*osmproto.BlobHeader, error) {
+	buf := headerBufPool.Get()
+	defer headerBufPool.Put(buf)
+
+	buf = buf[:blobHeaderSize]
+
 	n, err := dec.r.ReadAt(buf, off)
 	if err != nil {
 		return nil, err
@@ -113,7 +108,17 @@ func (dec *BlobReader) readBlobHeader(buf []byte, off int64) (*osmproto.BlobHead
 	return blobHeader, nil
 }
 
-func (dec *BlobReader) readBlob(buf []byte, off int64) (*osmproto.Blob, error) {
+var (
+	blobBuf   = make([]byte, MaxBlobSize)
+	blobBufMu sync.Mutex
+)
+
+func (dec *BlobReader) readBlob(off int64, blobSize int32) (*osmproto.Blob, error) {
+	blobBufMu.Lock()
+	defer blobBufMu.Unlock()
+
+	buf := blobBuf[:blobSize]
+
 	n, err := dec.r.ReadAt(buf, off)
 	if err != nil {
 		return nil, err
@@ -129,39 +134,6 @@ func (dec *BlobReader) readBlob(buf []byte, off int64) (*osmproto.Blob, error) {
 	return blob, nil
 }
 
-func getData(blob *osmproto.Blob, data []byte) ([]byte, error) {
-	switch {
-	case blob.Raw != nil:
-		return blob.GetRaw(), nil
-
-	case blob.ZlibData != nil:
-		r, err := zlibReader(blob.GetZlibData())
-		if err != nil {
-			return nil, err
-		}
-
-		// using the bytes.Buffer allows for the preallocation of the necessary space.
-		l := blob.GetRawSize() + bytes.MinRead
-		if cap(data) < int(l) {
-			data = make([]byte, 0, l+l/10)
-		} else {
-			data = data[:0]
-		}
-		buf := bytes.NewBuffer(data)
-		if _, err = buf.ReadFrom(r); err != nil {
-			return nil, err
-		}
-
-		if buf.Len() != int(blob.GetRawSize()) {
-			return nil, fmt.Errorf("raw blob data size %d but expected %d", buf.Len(), blob.GetRawSize())
-		}
-
-		return buf.Bytes(), nil
-	default:
-		return nil, errors.New("unknown blob data")
-	}
-}
-
 // Header contains the contents of the header in the pbf file.
 type Header struct {
 	Bounds               *osm.Bounds
@@ -175,7 +147,7 @@ type Header struct {
 }
 
 func DecodeOSMHeader(blob *osmproto.Blob) (*Header, error) {
-	data, err := getData(blob, nil)
+	data, err := extractData(blob, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -204,17 +176,17 @@ func DecodeOSMHeader(blob *osmproto.Blob) (*Header, error) {
 	}
 
 	// convert timestamp epoch seconds to golang time structure if it exists
-	if headerBlock.OsmosisReplicationTimestamp != nil {
-		header.ReplicationTimestamp = time.Unix(*headerBlock.OsmosisReplicationTimestamp, 0).UTC()
+	if headerBlock.HasOsmosisReplicationTimestamp() {
+		header.ReplicationTimestamp = time.Unix(headerBlock.GetOsmosisReplicationTimestamp(), 0).UTC()
 	}
 	// read bounding box if it exists
-	if headerBlock.Bbox != nil {
+	if bbox := headerBlock.GetBbox(); bbox != nil {
 		// Units are always in nanodegree and do not obey granularity rules. See osmformat.proto
 		header.Bounds = &osm.Bounds{
-			MinLon: 1e-9 * float64(*headerBlock.Bbox.Left),
-			MaxLon: 1e-9 * float64(*headerBlock.Bbox.Right),
-			MinLat: 1e-9 * float64(*headerBlock.Bbox.Bottom),
-			MaxLat: 1e-9 * float64(*headerBlock.Bbox.Top),
+			MinLon: 1e-9 * float64(bbox.GetLeft()),
+			MaxLon: 1e-9 * float64(bbox.GetRight()),
+			MinLat: 1e-9 * float64(bbox.GetBottom()),
+			MaxLat: 1e-9 * float64(bbox.GetTop()),
 		}
 	}
 
