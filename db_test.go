@@ -3,6 +3,8 @@ package osmpbfdb_test
 import (
 	"fmt"
 	"io"
+	"log"
+	"log/slog"
 	"math"
 	"math/rand"
 	"net/http"
@@ -344,6 +346,10 @@ func bToMb(b uint64) uint64 {
 }
 
 func BenchmarkGet(b *testing.B) {
+	// Disable logs for benchmark
+	slog.SetDefault(slog.New(slog.DiscardHandler))
+	log.SetOutput(io.Discard)
+
 	ft := &OSMFileTest{
 		FileName:     London,
 		FileURL:      LondonURL,
@@ -378,7 +384,8 @@ func BenchmarkGet(b *testing.B) {
 	}()
 
 	cfg := osmpbfdb.Config{
-		IndexDir: indexDir,
+		IndexDir:  indexDir,
+		CacheType: osmpbfdb.CacheTypeNone,
 	}
 	d, err := osmpbfdb.OpenDB(f, cfg)
 	if err != nil {
