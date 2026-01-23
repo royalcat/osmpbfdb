@@ -72,6 +72,8 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 		readCache = newLRUObjCache[uint32](1000)
 	case CacheTypeWeak:
 		readCache = newWeakObjCache[uint32]()
+	case CacheTypeNone:
+		readCache = &cacheNone[uint32]{}
 	default:
 		return nil, fmt.Errorf("unknown cache type: %v", config.CacheType)
 	}

@@ -384,7 +384,8 @@ func BenchmarkGet(b *testing.B) {
 	}()
 
 	cfg := osmpbfdb.Config{
-		IndexDir: indexDir,
+		IndexDir:  indexDir,
+		CacheType: osmpbfdb.CacheTypeNone,
 	}
 	d, err := osmpbfdb.OpenDB(f, cfg)
 	if err != nil {

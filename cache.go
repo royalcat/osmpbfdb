@@ -12,4 +12,14 @@ type CacheType string
 const (
 	CacheTypeWeak CacheType = "weak"
 	CacheTypeLRU  CacheType = "LRU"
+	CacheTypeNone CacheType = "none" // for testing and benchmarking
 )
+
+type cacheNone[K any] struct{}
+
+func (c *cacheNone[K]) Get(key K) ([]osm.Object, bool) {
+	return nil, false
+}
+
+func (c *cacheNone[K]) Set(key K, value []osm.Object) {
+}

@@ -2,12 +2,6 @@ name: benches
 
 on:
   push:
-  workflow_dispatch:
-    inputs:
-      commit_sha:
-        description: "The specific commit SHA to run the workflow on"
-        required: false
-        type: string
 
 permissions:
   contents: write
@@ -41,23 +35,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install libdeflate
+        if: matrix.cgo == '1'
         run: |
           sudo apt-get update
           sudo apt-get install -y libdeflate-dev libdeflate0
-      - name: Get branch name
-        shell: bash
-        id: get-branch-name
-        run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_OUTPUT
-          else
-            echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
-          fi
       - name: checkout
         uses: actions/checkout@v5
-        with:
-          # Use the provided input commit_sha if available, otherwise use the commit from the trigger
-          ref: ${{ github.event.inputs.commit_sha || github.sha }}
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
