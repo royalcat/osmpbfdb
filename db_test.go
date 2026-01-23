@@ -9,12 +9,14 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
 	"github.com/paulmach/osm"
 	"github.com/royalcat/osmpbfdb"
+	"golang.org/x/exp/mmap"
 )
 
 const (
@@ -367,27 +369,79 @@ func BenchmarkGet(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	f, err := os.Open(ft.FileName)
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer f.Close()
+	b.Run("file_descriptor", func(b *testing.B) {
+		f, err := os.Open(ft.FileName)
+		if err != nil {
+			b.Fatal(err)
+		}
+		defer f.Close()
 
-	indexDir, err := os.MkdirTemp("", "osmpbfdb-index")
+		b.Run("cache_none", func(b *testing.B) {
+			benchDBConfig(b, f,
+				osmpbfdb.Config{
+					CacheType: osmpbfdb.CacheTypeNone,
+				},
+			)
+		})
+
+		b.Run("cache_lru", func(b *testing.B) {
+			benchDBConfig(b, f,
+				osmpbfdb.Config{
+					CacheType: osmpbfdb.CacheTypeLRU,
+				},
+			)
+		})
+
+		b.Run("cache_weak_defaultGC", func(b *testing.B) {
+			benchDBConfig(b, f,
+				osmpbfdb.Config{
+					CacheType: osmpbfdb.CacheTypeWeak,
+				},
+			)
+		})
+	})
+
+	b.Run("file_mmap", func(b *testing.B) {
+		f, err := mmap.Open(ft.FileName)
+		if err != nil {
+			b.Fatal(err)
+		}
+		defer f.Close()
+
+		b.Run("cache_none", func(b *testing.B) {
+			benchDBConfig(b, f,
+				osmpbfdb.Config{
+					CacheType: osmpbfdb.CacheTypeNone,
+				},
+			)
+		})
+
+		b.Run("cache_lru", func(b *testing.B) {
+			benchDBConfig(b, f,
+				osmpbfdb.Config{
+					CacheType: osmpbfdb.CacheTypeLRU,
+				},
+			)
+		})
+
+		b.Run("cache_weak_defaultGC", func(b *testing.B) {
+			benchDBConfig(b, f,
+				osmpbfdb.Config{
+					CacheType: osmpbfdb.CacheTypeWeak,
+				},
+			)
+		})
+	})
+}
+
+func benchDBConfig(b *testing.B, file io.ReaderAt, cfg osmpbfdb.Config) {
+	cfg.IndexDir = filepath.Join(b.TempDir(), "osmpbfdb-index")
+	err := os.Mkdir(cfg.IndexDir, 0755)
 	if err != nil {
 		b.Fatalf("failed to create temp index dir: %v", err)
 	}
-	defer func() {
-		if err := os.RemoveAll(indexDir); err != nil {
-			b.Fatalf("failed to remove temp index dir: %v", err)
-		}
-	}()
 
-	cfg := osmpbfdb.Config{
-		IndexDir:  indexDir,
-		CacheType: osmpbfdb.CacheTypeNone,
-	}
-	d, err := osmpbfdb.OpenDB(f, cfg)
+	d, err := osmpbfdb.OpenDB(file, cfg)
 	if err != nil {
 		b.Fatal(err)
 	}
