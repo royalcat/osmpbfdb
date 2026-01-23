@@ -14,8 +14,30 @@ permissions:
   deployments: write
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  benchmarks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-24.04", "ubuntu-24.04-arm"]
+        cgo: [0, 1]
+        include:
+          - os: "ubuntu-24.04-arm"
+            GOARM64: ""
+          - os: "ubuntu-24.04-arm"
+            GOARM64: "8.0,lse"
+          - os: "ubuntu-24.04-arm"
+            GOARM64: "9.0,lse"
+          - os: "ubuntu-24.04"
+            GOARM64: ""
+          - os: "ubuntu-24.04"
+            GOAMD64: "v1"
+          - os: "ubuntu-24.04"
+            GOAMD64: "v2"
+          - os: "ubuntu-24.04"
+            GOAMD64: "v3"
+          - os: "ubuntu-24.04"
+            GOAMD64: "v4"
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Install libdeflate
         run: |
@@ -42,12 +64,16 @@ jobs:
           check-latest: true
           cache: true
       - name: Run benchmark
-        run: go test -run='^$' -bench '.' -benchmem | tee output.txt
+        env:
+          CGO_ENABLED: ${{ matrix.cgo }}
+          GOARM64: ${{ matrix.GOARM64 }}
+          GOAMD64: ${{ matrix.GOAMD64 }}
+        run: go test -run='^$' -bench '.' -benchtime 10s -benchmem | tee output.txt
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           tool: "go"
           output-file-path: output.txt
-          benchmark-data-dir-path: "bench/${{ steps.get-branch-name.outputs.BRANCH_NAME }}"
+          benchmark-data-dir-path: "bench/${{ steps.get-branch-name.outputs.BRANCH_NAME }}/${{ matrix.os }}/cgo-${{ matrix.cgo }}/${{ matrix.GOAMD64 || matrix.GOARM64 || 'default' }}/"
           auto-push: true
