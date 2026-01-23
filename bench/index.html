@@ -54,6 +54,19 @@
             .tab-content.active {
                 display: block;
             }
+            .branch-selector {
+                margin: 15px 0;
+            }
+            .branch-selector select {
+                padding: 5px 10px;
+                font-size: 14px;
+            }
+            .branch-content {
+                display: none;
+            }
+            .branch-content.active {
+                display: block;
+            }
         </style>
     </head>
     <body>
@@ -65,6 +78,11 @@
             >
         </p>
         <p id="last-update"></p>
+
+        <div class="branch-selector">
+            <label for="branch-select">Branch: </label>
+            <select id="branch-select"></select>
+        </div>
 
         <div id="main">
             <p>Loading benchmark data...</p>
@@ -84,40 +102,53 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.2/dist/Chart.min.js"></script>
         <script>
             (function () {
-                const benchmarkConfigs = [
-                    {
-                        branch: "continuous-benchmarking",
-                        platform: "ubuntu-24.04",
-                        cgo: "cgo-0",
-                        label: "CGO Disabled",
-                    },
-                    {
-                        branch: "continuous-benchmarking",
-                        platform: "ubuntu-24.04",
-                        cgo: "cgo-1",
-                        label: "CGO Enabled",
-                    },
-                    {
-                        branch: "continuous-benchmarking",
-                        platform: "ubuntu-24.04-arm",
-                        cgo: "cgo-0",
-                        label: "CGO Disabled",
-                    },
-                    {
-                        branch: "continuous-benchmarking",
-                        platform: "ubuntu-24.04-arm",
-                        cgo: "cgo-1",
-                        label: "CGO Enabled",
-                    },
-                ];
+                const defaultBranch = "master";
 
                 const platformNames = {
                     "ubuntu-24.04": "Ubuntu 24.04 (x86_64)",
                     "ubuntu-24.04-arm": "Ubuntu 24.04 (ARM64)",
                 };
 
-                async function loadData(config) {
-                    const url = `branch/${config.branch}/${config.platform}/${config.cgo}/default/data.js`;
+                const platforms = ["ubuntu-24.04", "ubuntu-24.04-arm"];
+                const cgos = [
+                    { id: "cgo-0", label: "CGO Disabled" },
+                    { id: "cgo-1", label: "CGO Enabled" },
+                ];
+
+                async function discoverBranches() {
+                    // Try to fetch the branch directory listing
+                    // Since we can't list directories via fetch, we'll try known branches
+                    const knownBranches = ["master"];
+                    const validBranches = [];
+
+                    for (const branch of knownBranches) {
+                        // Try to load any data file to see if branch exists
+                        for (const platform of platforms) {
+                            for (const cgo of cgos) {
+                                const url = `branch/${branch}/${platform}/${cgo.id}/default/data.js`;
+                                try {
+                                    const response = await fetch(url, {
+                                        method: "HEAD",
+                                    });
+                                    if (response.ok) {
+                                        if (!validBranches.includes(branch)) {
+                                            validBranches.push(branch);
+                                        }
+                                        break;
+                                    }
+                                } catch (e) {
+                                    // ignore
+                                }
+                            }
+                            if (validBranches.includes(branch)) break;
+                        }
+                    }
+
+                    return validBranches;
+                }
+
+                async function loadData(branch, platform, cgo) {
+                    const url = `branch/${branch}/${platform}/${cgo}/default/data.js`;
                     try {
                         const response = await fetch(url);
                         if (!response.ok) return null;
@@ -130,6 +161,31 @@
                         console.warn("Failed to load " + url, e);
                         return null;
                     }
+                }
+
+                async function loadBranchData(branch) {
+                    const configs = [];
+                    for (const platform of platforms) {
+                        for (const cgo of cgos) {
+                            configs.push({
+                                branch,
+                                platform,
+                                cgo: cgo.id,
+                                label: cgo.label,
+                            });
+                        }
+                    }
+
+                    return await Promise.all(
+                        configs.map(async (config) => ({
+                            config,
+                            data: await loadData(
+                                config.branch,
+                                config.platform,
+                                config.cgo,
+                            ),
+                        })),
+                    );
                 }
 
                 function collectBenches(entries) {
@@ -250,8 +306,6 @@
                     container.appendChild(h);
 
                     const table = document.createElement("table");
-                    const platforms = ["ubuntu-24.04", "ubuntu-24.04-arm"];
-                    const cgos = ["cgo-0", "cgo-1"];
 
                     let html = "<thead><tr><th>Benchmark</th>";
                     for (const p of platforms) {
@@ -259,8 +313,7 @@
                             const pName = p.includes("arm")
                                 ? "ARM64"
                                 : "x86_64";
-                            const cName = c === "cgo-1" ? "CGO" : "No CGO";
-                            html += `<th>${pName} / ${cName}</th>`;
+                            html += `<th>${pName} / ${c.label}</th>`;
                         }
                     }
                     html += "</tr></thead><tbody>";
@@ -269,7 +322,7 @@
                         html += `<tr><td>${name}</td>`;
                         for (const p of platforms) {
                             for (const c of cgos) {
-                                const r = results[`${p}-${c}`];
+                                const r = results[`${p}-${c.id}`];
                                 html += `<td>${r ? r.value.toLocaleString() + " " + r.unit.split("\t")[0] : "-"}</td>`;
                             }
                         }
@@ -334,15 +387,11 @@
                     container.appendChild(contents);
                 }
 
-                async function init() {
+                async function renderBranch(branch) {
                     const main = document.getElementById("main");
+                    main.innerHTML = "<p>Loading benchmark data...</p>";
 
-                    const allData = await Promise.all(
-                        benchmarkConfigs.map(async (config) => ({
-                            config,
-                            data: await loadData(config),
-                        })),
-                    );
+                    const allData = await loadBranchData(branch);
 
                     let lastUpdate = 0;
                     for (const { data } of allData) {
@@ -357,40 +406,99 @@
 
                     main.innerHTML = "";
 
-                    // Group by branch
-                    const branches = new Map();
+                    const hasData = allData.some((d) => d.data !== null);
+                    if (!hasData) {
+                        main.innerHTML =
+                            "<p>No benchmark data found for this branch.</p>";
+                        return;
+                    }
+
+                    const section = document.createElement("section");
+
+                    renderComparisonTable(allData, section);
+
+                    // Group by platform
+                    const platformGroups = new Map();
                     for (const item of allData) {
-                        const b = item.config.branch;
-                        if (!branches.has(b)) branches.set(b, []);
-                        branches.get(b).push(item);
+                        const p = item.config.platform;
+                        if (!platformGroups.has(p)) platformGroups.set(p, []);
+                        platformGroups.get(p).push(item);
                     }
 
-                    for (const [branchName, branchData] of branches) {
-                        const section = document.createElement("section");
-                        const h2 = document.createElement("h2");
-                        h2.textContent = "Branch: " + branchName;
-                        section.appendChild(h2);
+                    for (const [platformKey, platformData] of platformGroups) {
+                        renderPlatform(platformKey, platformData, section);
+                    }
 
-                        renderComparisonTable(branchData, section);
+                    main.appendChild(section);
+                }
 
-                        // Group by platform
-                        const platforms = new Map();
-                        for (const item of branchData) {
-                            const p = item.config.platform;
-                            if (!platforms.has(p)) platforms.set(p, []);
-                            platforms.get(p).push(item);
+                async function init() {
+                    const select = document.getElementById("branch-select");
+                    const branches = await discoverBranches();
+
+                    if (branches.length === 0) {
+                        document.getElementById("main").innerHTML =
+                            "<p>No benchmark data found.</p>";
+                        select.innerHTML =
+                            "<option disabled>No branches found</option>";
+                        return;
+                    }
+
+                    // Sort branches, putting default branch first
+                    branches.sort((a, b) => {
+                        if (a === defaultBranch) return -1;
+                        if (b === defaultBranch) return 1;
+                        return a.localeCompare(b);
+                    });
+
+                    // Populate select
+                    for (const branch of branches) {
+                        const option = document.createElement("option");
+                        option.value = branch;
+                        option.textContent = branch;
+                        select.appendChild(option);
+                    }
+
+                    // Get branch from query params or use default
+                    const urlParams = new URLSearchParams(
+                        window.location.search,
+                    );
+                    const queryBranch = urlParams.get("branch");
+
+                    let initialBranch;
+                    if (queryBranch && branches.includes(queryBranch)) {
+                        initialBranch = queryBranch;
+                    } else if (branches.includes(defaultBranch)) {
+                        initialBranch = defaultBranch;
+                    } else {
+                        initialBranch = branches[0];
+                    }
+                    select.value = initialBranch;
+
+                    // Handle branch change
+                    select.onchange = () => {
+                        const newBranch = select.value;
+                        // Update URL without reloading
+                        const url = new URL(window.location);
+                        url.searchParams.set("branch", newBranch);
+                        window.history.pushState({}, "", url);
+                        renderBranch(newBranch);
+                    };
+
+                    // Handle browser back/forward
+                    window.onpopstate = () => {
+                        const params = new URLSearchParams(
+                            window.location.search,
+                        );
+                        const branch = params.get("branch") || initialBranch;
+                        if (branches.includes(branch)) {
+                            select.value = branch;
+                            renderBranch(branch);
                         }
+                    };
 
-                        for (const [platformKey, platformData] of platforms) {
-                            renderPlatform(platformKey, platformData, section);
-                        }
-
-                        main.appendChild(section);
-                    }
-
-                    if (branches.size === 0) {
-                        main.innerHTML = "<p>No benchmark data found.</p>";
-                    }
+                    // Initial render
+                    renderBranch(initialBranch);
                 }
 
                 init();
