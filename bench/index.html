@@ -54,19 +54,6 @@
             .tab-content.active {
                 display: block;
             }
-            .branch-selector {
-                margin: 15px 0;
-            }
-            .branch-selector select {
-                padding: 5px 10px;
-                font-size: 14px;
-            }
-            .branch-content {
-                display: none;
-            }
-            .branch-content.active {
-                display: block;
-            }
         </style>
     </head>
     <body>
@@ -78,11 +65,7 @@
             >
         </p>
         <p id="last-update"></p>
-
-        <div class="branch-selector">
-            <label for="branch-select">Branch: </label>
-            <select id="branch-select"></select>
-        </div>
+        <p id="branch-info"></p>
 
         <div id="main">
             <p>Loading benchmark data...</p>
@@ -115,36 +98,11 @@
                     { id: "cgo-1", label: "CGO Enabled" },
                 ];
 
-                async function discoverBranches() {
-                    // Try to fetch the branch directory listing
-                    // Since we can't list directories via fetch, we'll try known branches
-                    const knownBranches = ["master"];
-                    const validBranches = [];
-
-                    for (const branch of knownBranches) {
-                        // Try to load any data file to see if branch exists
-                        for (const platform of platforms) {
-                            for (const cgo of cgos) {
-                                const url = `branch/${branch}/${platform}/${cgo.id}/default/data.js`;
-                                try {
-                                    const response = await fetch(url, {
-                                        method: "HEAD",
-                                    });
-                                    if (response.ok) {
-                                        if (!validBranches.includes(branch)) {
-                                            validBranches.push(branch);
-                                        }
-                                        break;
-                                    }
-                                } catch (e) {
-                                    // ignore
-                                }
-                            }
-                            if (validBranches.includes(branch)) break;
-                        }
-                    }
-
-                    return validBranches;
+                function getBranchFromUrl() {
+                    const urlParams = new URLSearchParams(
+                        window.location.search,
+                    );
+                    return urlParams.get("branch") || defaultBranch;
                 }
 
                 async function loadData(branch, platform, cgo) {
@@ -387,9 +345,12 @@
                     container.appendChild(contents);
                 }
 
-                async function renderBranch(branch) {
+                async function init() {
                     const main = document.getElementById("main");
-                    main.innerHTML = "<p>Loading benchmark data...</p>";
+                    const branch = getBranchFromUrl();
+
+                    document.getElementById("branch-info").textContent =
+                        "Branch: " + branch;
 
                     const allData = await loadBranchData(branch);
 
@@ -430,75 +391,6 @@
                     }
 
                     main.appendChild(section);
-                }
-
-                async function init() {
-                    const select = document.getElementById("branch-select");
-                    const branches = await discoverBranches();
-
-                    if (branches.length === 0) {
-                        document.getElementById("main").innerHTML =
-                            "<p>No benchmark data found.</p>";
-                        select.innerHTML =
-                            "<option disabled>No branches found</option>";
-                        return;
-                    }
-
-                    // Sort branches, putting default branch first
-                    branches.sort((a, b) => {
-                        if (a === defaultBranch) return -1;
-                        if (b === defaultBranch) return 1;
-                        return a.localeCompare(b);
-                    });
-
-                    // Populate select
-                    for (const branch of branches) {
-                        const option = document.createElement("option");
-                        option.value = branch;
-                        option.textContent = branch;
-                        select.appendChild(option);
-                    }
-
-                    // Get branch from query params or use default
-                    const urlParams = new URLSearchParams(
-                        window.location.search,
-                    );
-                    const queryBranch = urlParams.get("branch");
-
-                    let initialBranch;
-                    if (queryBranch && branches.includes(queryBranch)) {
-                        initialBranch = queryBranch;
-                    } else if (branches.includes(defaultBranch)) {
-                        initialBranch = defaultBranch;
-                    } else {
-                        initialBranch = branches[0];
-                    }
-                    select.value = initialBranch;
-
-                    // Handle branch change
-                    select.onchange = () => {
-                        const newBranch = select.value;
-                        // Update URL without reloading
-                        const url = new URL(window.location);
-                        url.searchParams.set("branch", newBranch);
-                        window.history.pushState({}, "", url);
-                        renderBranch(newBranch);
-                    };
-
-                    // Handle browser back/forward
-                    window.onpopstate = () => {
-                        const params = new URLSearchParams(
-                            window.location.search,
-                        );
-                        const branch = params.get("branch") || initialBranch;
-                        if (branches.includes(branch)) {
-                            select.value = branch;
-                            renderBranch(branch);
-                        }
-                    };
-
-                    // Initial render
-                    renderBranch(initialBranch);
                 }
 
                 init();
