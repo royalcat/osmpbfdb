@@ -39,6 +39,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libdeflate-dev libdeflate0
+      - name: Get branch name
+        shell: bash
+        id: get-branch-name
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+          fi
       - name: checkout
         uses: actions/checkout@v5
       - name: Setup Go
