@@ -1,5 +1,14 @@
 name: gobenchdata publish
-on: push
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "The specific commit SHA to run the workflow on"
+        required: false
+        type: string
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -9,7 +18,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libdeflate-dev libdeflate0
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
+        with:
+          # Use the provided input commit_sha if available, otherwise use the commit from the trigger
+          ref: ${{ github.event.inputs.commit_sha || github.sha }}
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
