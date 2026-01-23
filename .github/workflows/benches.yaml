@@ -1,8 +1,6 @@
 name: gobenchdata publish
 on:
   push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       commit_sha:
