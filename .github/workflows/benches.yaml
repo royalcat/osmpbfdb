@@ -1,4 +1,5 @@
 name: benches
+
 on:
   push:
   workflow_dispatch:
@@ -7,8 +8,11 @@ on:
         description: "The specific commit SHA to run the workflow on"
         required: false
         type: string
+
 permissions:
   contents: write
+  deployments: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -17,6 +21,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libdeflate-dev libdeflate0
+      - name: Get branch name
+        shell: bash
+        id: get-branch-name
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+          fi
       - name: checkout
         uses: actions/checkout@v5
         with:
@@ -30,10 +43,17 @@ jobs:
           cache: true
       - name: Run benchmark
         run: go test -run='^$' -bench '.' -benchmem | tee output.txt
+      - name: Download previous benchmark data
+        uses: actions/cache@v4
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark-${{ steps.get-branch-name.outputs.BRANCH_NAME }}
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           tool: "go"
           output-file-path: output.txt
+          external-data-json-path: ./cache/benchmark-data.json
+          benchmark-data-dir-path: "bench/${{ steps.get-branch-name.outputs.BRANCH_NAME }}"
           auto-push: true
