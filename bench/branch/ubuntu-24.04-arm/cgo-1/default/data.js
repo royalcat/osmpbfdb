@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769154340314,
+  "lastUpdate": 1769156427518,
   "repoUrl": "https://github.com/royalcat/osmpbfdb",
   "entries": {
     "Benchmark": [
@@ -48,6 +48,54 @@ window.BENCHMARK_DATA = {
             "value": 8606,
             "unit": "allocs/op",
             "extra": "6066 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "k.adamovich20@gmail.com",
+            "name": "royalcat",
+            "username": "royalcat"
+          },
+          "committer": {
+            "email": "k.adamovich20@gmail.com",
+            "name": "royalcat",
+            "username": "royalcat"
+          },
+          "distinct": true,
+          "id": "2e2395efdc34dcd4b2fba63d2ef725fc8a02ea8e",
+          "message": "Merge branch 'continuous-benchmarking'",
+          "timestamp": "2026-01-23T12:18:29+04:00",
+          "tree_id": "4d993223e48b9e56d3ac1d16aed8d508f3fa0ee6",
+          "url": "https://github.com/royalcat/osmpbfdb/commit/2e2395efdc34dcd4b2fba63d2ef725fc8a02ea8e"
+        },
+        "date": 1769156426543,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGet",
+            "value": 2033847,
+            "unit": "ns/op\t 4893924 B/op\t    8673 allocs/op",
+            "extra": "6286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet - ns/op",
+            "value": 2033847,
+            "unit": "ns/op",
+            "extra": "6286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet - B/op",
+            "value": 4893924,
+            "unit": "B/op",
+            "extra": "6286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet - allocs/op",
+            "value": 8673,
+            "unit": "allocs/op",
+            "extra": "6286 times\n4 procs"
           }
         ]
       }
