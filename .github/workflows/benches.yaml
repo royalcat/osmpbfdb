@@ -43,17 +43,11 @@ jobs:
           cache: true
       - name: Run benchmark
         run: go test -run='^$' -bench '.' -benchmem | tee output.txt
-      - name: Download previous benchmark data
-        uses: actions/cache@v4
-        with:
-          path: ./cache
-          key: ${{ runner.os }}-benchmark-${{ steps.get-branch-name.outputs.BRANCH_NAME }}
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           tool: "go"
           output-file-path: output.txt
-          external-data-json-path: ./cache/benchmark-data.json
           benchmark-data-dir-path: "bench/${{ steps.get-branch-name.outputs.BRANCH_NAME }}"
           auto-push: true
