@@ -20,23 +20,24 @@ jobs:
       matrix:
         os: ["ubuntu-24.04", "ubuntu-24.04-arm"]
         cgo: [0, 1]
-        include:
-          - os: "ubuntu-24.04-arm"
-            GOARM64: ""
-          - os: "ubuntu-24.04-arm"
-            GOARM64: "8.0,lse"
-          - os: "ubuntu-24.04-arm"
-            GOARM64: "9.0,lse"
-          - os: "ubuntu-24.04"
-            GOARM64: ""
-          - os: "ubuntu-24.04"
-            GOAMD64: "v1"
-          - os: "ubuntu-24.04"
-            GOAMD64: "v2"
-          - os: "ubuntu-24.04"
-            GOAMD64: "v3"
-          - os: "ubuntu-24.04"
-            GOAMD64: "v4"
+        # TODO
+        # include:
+        #   - os: "ubuntu-24.04-arm"
+        #     GOARM64: ""
+        #   - os: "ubuntu-24.04-arm"
+        #     GOARM64: "8.0,lse"
+        #   - os: "ubuntu-24.04-arm"
+        #     GOARM64: "9.0,lse"
+        #   - os: "ubuntu-24.04"
+        #     GOARM64: ""
+        #   - os: "ubuntu-24.04"
+        #     GOAMD64: "v1"
+        #   - os: "ubuntu-24.04"
+        #     GOAMD64: "v2"
+        #   - os: "ubuntu-24.04"
+        #     GOAMD64: "v3"
+        #   - os: "ubuntu-24.04"
+        #     GOAMD64: "v4"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install libdeflate
