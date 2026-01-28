@@ -292,8 +292,7 @@ func (dec *ObjectDecoder) extractDenseNodes(primitiveBlock *osmproto.PrimitiveBl
 				n.Version = int(info.GetVersion()[i])
 
 				timestamp += info.GetTimestamp()[i]
-				millisec := time.Duration(timestamp*dateGranularity) * time.Millisecond
-				n.Timestamp = time.Unix(0, millisec.Nanoseconds()).UTC()
+				n.Timestamp = time.Unix(timestamp*dateGranularity, 0).UTC()
 
 				changeset += info.GetChangeset()[i]
 				n.ChangesetID = osm.ChangesetID(changeset)
