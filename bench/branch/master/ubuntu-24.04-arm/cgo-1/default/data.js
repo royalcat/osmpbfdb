@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769166126554,
+  "lastUpdate": 1769579945750,
   "repoUrl": "https://github.com/royalcat/osmpbfdb",
   "entries": {
     "Benchmark": [
@@ -312,6 +312,318 @@ window.BENCHMARK_DATA = {
             "value": 1,
             "unit": "allocs/op",
             "extra": "4651851 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "k.adamovich20@gmail.com",
+            "name": "royalcat",
+            "username": "royalcat"
+          },
+          "committer": {
+            "email": "k.adamovich20@gmail.com",
+            "name": "royalcat",
+            "username": "royalcat"
+          },
+          "distinct": true,
+          "id": "95410f1eb75c6f48b535dd6c6d6b2bdd6b3a71a0",
+          "message": "optimize timestamp parsing",
+          "timestamp": "2026-01-28T09:53:45+04:00",
+          "tree_id": "186dff89421bee0ab9e38bb9e7ef7eab92a2c51f",
+          "url": "https://github.com/royalcat/osmpbfdb/commit/95410f1eb75c6f48b535dd6c6d6b2bdd6b3a71a0"
+        },
+        "date": 1769579945017,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_none",
+            "value": 2013415,
+            "unit": "ns/op\t 5007627 B/op\t    8631 allocs/op",
+            "extra": "6067 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_none - ns/op",
+            "value": 2013415,
+            "unit": "ns/op",
+            "extra": "6067 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+            "value": 5007627,
+            "unit": "B/op",
+            "extra": "6067 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+            "value": 8631,
+            "unit": "allocs/op",
+            "extra": "6067 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_none",
+            "value": 2030853,
+            "unit": "ns/op\t 5053795 B/op\t    8640 allocs/op",
+            "extra": "5751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_none - ns/op",
+            "value": 2030853,
+            "unit": "ns/op",
+            "extra": "5751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+            "value": 5053795,
+            "unit": "B/op",
+            "extra": "5751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+            "value": 8640,
+            "unit": "allocs/op",
+            "extra": "5751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_lru",
+            "value": 2331,
+            "unit": "ns/op\t     112 B/op\t       1 allocs/op",
+            "extra": "5291648 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_lru - ns/op",
+            "value": 2331,
+            "unit": "ns/op",
+            "extra": "5291648 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+            "value": 112,
+            "unit": "B/op",
+            "extra": "5291648 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "5291648 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_lru",
+            "value": 2541,
+            "unit": "ns/op\t     112 B/op\t       1 allocs/op",
+            "extra": "4804953 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_lru - ns/op",
+            "value": 2541,
+            "unit": "ns/op",
+            "extra": "4804953 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+            "value": 112,
+            "unit": "B/op",
+            "extra": "4804953 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "4804953 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+            "value": 2703,
+            "unit": "ns/op\t     141 B/op\t       1 allocs/op",
+            "extra": "4472738 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - ns/op",
+            "value": 2703,
+            "unit": "ns/op",
+            "extra": "4472738 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+            "value": 141,
+            "unit": "B/op",
+            "extra": "4472738 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "4472738 times"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+            "value": 2819,
+            "unit": "ns/op\t     303 B/op\t       1 allocs/op",
+            "extra": "4051486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - ns/op",
+            "value": 2819,
+            "unit": "ns/op",
+            "extra": "4051486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+            "value": 303,
+            "unit": "B/op",
+            "extra": "4051486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "4051486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_none",
+            "value": 1903820,
+            "unit": "ns/op\t 2747383 B/op\t    8651 allocs/op",
+            "extra": "6292 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_none - ns/op",
+            "value": 1903820,
+            "unit": "ns/op",
+            "extra": "6292 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+            "value": 2747383,
+            "unit": "B/op",
+            "extra": "6292 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+            "value": 8651,
+            "unit": "allocs/op",
+            "extra": "6292 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_none",
+            "value": 1913131,
+            "unit": "ns/op\t 2778909 B/op\t    8637 allocs/op",
+            "extra": "5466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_none - ns/op",
+            "value": 1913131,
+            "unit": "ns/op",
+            "extra": "5466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+            "value": 2778909,
+            "unit": "B/op",
+            "extra": "5466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+            "value": 8637,
+            "unit": "allocs/op",
+            "extra": "5466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_lru",
+            "value": 2613,
+            "unit": "ns/op\t     112 B/op\t       1 allocs/op",
+            "extra": "4656534 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_lru - ns/op",
+            "value": 2613,
+            "unit": "ns/op",
+            "extra": "4656534 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+            "value": 112,
+            "unit": "B/op",
+            "extra": "4656534 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "4656534 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_lru",
+            "value": 2558,
+            "unit": "ns/op\t     112 B/op\t       1 allocs/op",
+            "extra": "4729142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_lru - ns/op",
+            "value": 2558,
+            "unit": "ns/op",
+            "extra": "4729142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+            "value": 112,
+            "unit": "B/op",
+            "extra": "4729142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "4729142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+            "value": 2566,
+            "unit": "ns/op\t     112 B/op\t       1 allocs/op",
+            "extra": "4689398 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - ns/op",
+            "value": 2566,
+            "unit": "ns/op",
+            "extra": "4689398 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+            "value": 112,
+            "unit": "B/op",
+            "extra": "4689398 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "4689398 times"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+            "value": 2626,
+            "unit": "ns/op\t     156 B/op\t       1 allocs/op",
+            "extra": "4270729 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - ns/op",
+            "value": 2626,
+            "unit": "ns/op",
+            "extra": "4270729 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+            "value": 156,
+            "unit": "B/op",
+            "extra": "4270729 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "4270729 times\n4 procs"
           }
         ]
       }
