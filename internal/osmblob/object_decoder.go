@@ -19,7 +19,7 @@ var (
 	blobDataPool = newSyncPool(allocBlobData)
 )
 
-const decoderExtractLimit = (128 * 1024 * 1024) / (MaxBlobSize * 4) // 4 is arbitary compression ratio
+const decoderExtractLimit = (256 * 1024 * 1024) / MaxBlobSize
 
 var decoderExtractSemaphore = semaphore.NewWeighted(decoderExtractLimit)
 
