@@ -8,13 +8,13 @@ import (
 
 	"github.com/paulmach/osm"
 	"github.com/royalcat/osmpbfdb/internal/osmblob"
-	"github.com/royalcat/osmpbfdb/internal/winindex"
+	"github.com/royalcat/osmpbfdb/internal/rangeindex"
 )
 
 type Indexes struct {
-	NodeIndex     *winindex.Index[osm.NodeID]
-	WayIndex      *winindex.Index[osm.WayID]
-	RelationIndex *winindex.Index[osm.RelationID]
+	NodeIndex     *rangeindex.Index[osm.NodeID]
+	WayIndex      *rangeindex.Index[osm.WayID]
+	RelationIndex *rangeindex.Index[osm.RelationID]
 }
 
 func openIndexes(parentLog *slog.Logger, indexDir string, blobReader *osmblob.BlobReader) (*Indexes, error) {
@@ -46,7 +46,7 @@ func openIndexes(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Bl
 		if err != nil {
 			return nil, fmt.Errorf("failed to open node index file: %w", err)
 		}
-		indexes.NodeIndex, err = winindex.OpenIndex[osm.NodeID](nodeIndexFile)
+		indexes.NodeIndex, err = rangeindex.OpenIndex[osm.NodeID](nodeIndexFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open node index file: %w", err)
 		}
@@ -55,7 +55,7 @@ func openIndexes(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Bl
 		if err != nil {
 			return nil, fmt.Errorf("failed to open node index file: %w", err)
 		}
-		indexes.WayIndex, err = winindex.OpenIndex[osm.WayID](waysIndexFile)
+		indexes.WayIndex, err = rangeindex.OpenIndex[osm.WayID](waysIndexFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open node index file: %w", err)
 		}
@@ -64,7 +64,7 @@ func openIndexes(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Bl
 		if err != nil {
 			return nil, fmt.Errorf("failed to open node index file: %w", err)
 		}
-		indexes.RelationIndex, err = winindex.OpenIndex[osm.RelationID](relationsIndexFile)
+		indexes.RelationIndex, err = rangeindex.OpenIndex[osm.RelationID](relationsIndexFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open node index file: %w", err)
 		}

@@ -4,10 +4,10 @@ import (
 	"iter"
 
 	"github.com/paulmach/osm"
-	"github.com/royalcat/osmpbfdb/internal/winindex"
+	"github.com/royalcat/osmpbfdb/internal/rangeindex"
 )
 
-func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) iter.Seq2[T, error] {
+func iterForType[T osm.Object, ID ~int64](db *DB, index *rangeindex.Index[ID]) iter.Seq2[T, error] {
 	type chunk struct {
 		Objs []osm.Object
 		Err  error
@@ -58,7 +58,7 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *winindex.Index[ID]) ite
 	}
 }
 
-func countKeys[ID ~int64](index *winindex.Index[ID]) int64 {
+func countKeys[ID ~int64](index *rangeindex.Index[ID]) int64 {
 	var count int64
 	for window := range index.RangeWindows() {
 		count += int64(window.MaxKey) - int64(window.MinKey) + 1

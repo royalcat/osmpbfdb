@@ -1,11 +1,11 @@
-package winindex_test
+package rangeindex_test
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/royalcat/osmpbfdb/internal/winindex"
+	"github.com/royalcat/osmpbfdb/internal/rangeindex"
 )
 
 const (
@@ -39,7 +39,7 @@ func TestIndex(t *testing.T) {
 		{maxInt48, 123},
 	}
 
-	b, err := winindex.OpenIndexBuilder[int64](file)
+	b, err := rangeindex.OpenIndexBuilder[int64](file)
 	if err != nil {
 		t.Fatalf("failed to open index builder: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestIndex(t *testing.T) {
 	// }
 }
 
-func expectInIndex[K ~int64](index *winindex.Index[K], k K, v uint32) error {
+func expectInIndex[K ~int64](index *rangeindex.Index[K], k K, v uint32) error {
 	res, ok := index.Get(k)
 	if !ok {
 		return fmt.Errorf("expected to find %v", k)

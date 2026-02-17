@@ -1,4 +1,4 @@
-package winindex
+package rangeindex
 
 import (
 	"encoding/binary"
@@ -11,7 +11,7 @@ import (
 	"github.com/edsrzf/mmap-go"
 )
 
-type Window[K ~int64] struct {
+type Range[K ~int64] struct {
 	MaxKey K
 	MinKey K
 	Value  uint32
@@ -26,7 +26,7 @@ type IndexBuilder[K ~int64] struct {
 
 	file *os.File
 
-	currentWindow *Window[K]
+	currentWindow *Range[K]
 }
 
 func OpenIndexBuilder[K ~int64](file *os.File) (*IndexBuilder[K], error) {
@@ -45,7 +45,7 @@ func (b *IndexBuilder[K]) Add(k K, v uint32) error {
 	defer b.mu.Unlock()
 
 	if b.currentWindow == nil {
-		b.currentWindow = &Window[K]{MinKey: k, MaxKey: k, Value: v}
+		b.currentWindow = &Range[K]{MinKey: k, MaxKey: k, Value: v}
 		return nil
 	}
 
@@ -58,7 +58,7 @@ func (b *IndexBuilder[K]) Add(k K, v uint32) error {
 			return err
 		}
 
-		b.currentWindow = &Window[K]{MinKey: k, MaxKey: k, Value: v}
+		b.currentWindow = &Range[K]{MinKey: k, MaxKey: k, Value: v}
 		return nil
 	}
 }
@@ -184,14 +184,14 @@ func (idx *Index[K]) Get(key K) (uint32, bool) {
 	return 0, false
 }
 
-func (idx *Index[K]) RangeWindows() iter.Seq[Window[K]] {
-	return func(yield func(Window[K]) bool) {
+func (idx *Index[K]) RangeWindows() iter.Seq[Range[K]] {
+	return func(yield func(Range[K]) bool) {
 		for i := int64(0); i < idx.count; i++ {
 			o := i * windowSize
 			minKey := K(binary.LittleEndian.Uint64(idx.mmap[o:]))
 			maxKey := K(binary.LittleEndian.Uint64(idx.mmap[o+8:]))
 			value := binary.LittleEndian.Uint32(idx.mmap[o+16:])
-			if !yield(Window[K]{MinKey: minKey, MaxKey: maxKey, Value: value}) {
+			if !yield(Range[K]{MinKey: minKey, MaxKey: maxKey, Value: value}) {
 				break
 			}
 		}

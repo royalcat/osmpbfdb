@@ -10,7 +10,7 @@ import (
 
 	"github.com/paulmach/osm"
 	"github.com/royalcat/osmpbfdb/internal/osmblob"
-	"github.com/royalcat/osmpbfdb/internal/winindex"
+	"github.com/royalcat/osmpbfdb/internal/rangeindex"
 	"github.com/royalcat/osmpbfdb/osmproto"
 	"golang.org/x/sync/errgroup"
 )
@@ -44,7 +44,7 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 	if err != nil {
 		return nil, fmt.Errorf("failed to open node index file: %w", err)
 	}
-	nodeIndexBuilder, err := winindex.OpenIndexBuilder[osm.NodeID](nodeIndexFile)
+	nodeIndexBuilder, err := rangeindex.OpenIndexBuilder[osm.NodeID](nodeIndexFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open node index builder: %w", err)
 	}
@@ -52,7 +52,7 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 	if err != nil {
 		return nil, fmt.Errorf("failed to open way index file: %w", err)
 	}
-	wayIndexBuilder, err := winindex.OpenIndexBuilder[osm.WayID](wayIndexFile)
+	wayIndexBuilder, err := rangeindex.OpenIndexBuilder[osm.WayID](wayIndexFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open way index builder: %w", err)
 	}
@@ -60,7 +60,7 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 	if err != nil {
 		return nil, fmt.Errorf("failed to open relation index file: %w", err)
 	}
-	relationIndexBuilder, err := winindex.OpenIndexBuilder[osm.RelationID](relationIndexFile)
+	relationIndexBuilder, err := rangeindex.OpenIndexBuilder[osm.RelationID](relationIndexFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open relation index builder: %w", err)
 	}
