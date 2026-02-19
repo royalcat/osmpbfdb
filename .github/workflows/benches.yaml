@@ -87,7 +87,7 @@ jobs:
         run: find benchmark-results -type f | sort
 
       - name: Store benchmark results
-        uses: royalcat/go-continuous-benchmarking@v0.1.0
+        uses: royalcat/go-continuous-benchmarking@v0.1.1
         with:
           mode: store
           entries: "benchmark-results/*/entry.json"
