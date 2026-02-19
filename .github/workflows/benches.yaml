@@ -8,7 +8,7 @@ permissions:
   deployments: write
 
 jobs:
-  benchmarks:
+  benchmark:
     strategy:
       fail-fast: false
       matrix:
