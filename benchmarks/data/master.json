@@ -1154,5 +1154,1233 @@
         "procs": 4
       }
     ]
+  },
+  {
+    "commit": {
+      "sha": "970df2bd0903e598aacd314bf04825becc8bf4ec",
+      "message": "up benchmarks action",
+      "author": "royalcat",
+      "date": "2026-02-19T16:42:19+04:00",
+      "url": "https://github.com/royalcat/osmpbfdb/commit/970df2bd0903e598aacd314bf04825becc8bf4ec"
+    },
+    "date": 1771504939000,
+    "params": {
+      "cpu": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+      "goos": "linux",
+      "goarch": "amd64",
+      "goVersion": "go1.25.7",
+      "cgo": false
+    },
+    "benchmarks": [
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none",
+        "value": 3082765,
+        "unit": "ns/op",
+        "extra": "3670 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+        "value": 4335441,
+        "unit": "B/op",
+        "extra": "3670 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+        "value": 8769,
+        "unit": "allocs/op",
+        "extra": "3670 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none",
+        "value": 3095293,
+        "unit": "ns/op",
+        "extra": "4436 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+        "value": 4256252,
+        "unit": "B/op",
+        "extra": "4436 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+        "value": 8772,
+        "unit": "allocs/op",
+        "extra": "4436 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru",
+        "value": 1839,
+        "unit": "ns/op",
+        "extra": "6480130 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "6480130 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6480130 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru",
+        "value": 1843,
+        "unit": "ns/op",
+        "extra": "6176001 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "6176001 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6176001 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+        "value": 1808,
+        "unit": "ns/op",
+        "extra": "6551443 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+        "value": 123,
+        "unit": "B/op",
+        "extra": "6551443 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6551443 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+        "value": 1859,
+        "unit": "ns/op",
+        "extra": "6337678 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+        "value": 139,
+        "unit": "B/op",
+        "extra": "6337678 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6337678 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none",
+        "value": 3060221,
+        "unit": "ns/op",
+        "extra": "3892 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+        "value": 2768170,
+        "unit": "B/op",
+        "extra": "3892 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+        "value": 8698,
+        "unit": "allocs/op",
+        "extra": "3892 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none",
+        "value": 3063462,
+        "unit": "ns/op",
+        "extra": "3596 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+        "value": 2785707,
+        "unit": "B/op",
+        "extra": "3596 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+        "value": 8725,
+        "unit": "allocs/op",
+        "extra": "3596 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru",
+        "value": 1960,
+        "unit": "ns/op",
+        "extra": "6300488 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "6300488 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6300488 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru",
+        "value": 1819,
+        "unit": "ns/op",
+        "extra": "6588528 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "6588528 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6588528 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+        "value": 1862,
+        "unit": "ns/op",
+        "extra": "6126741 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+        "value": 125,
+        "unit": "B/op",
+        "extra": "6126741 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6126741 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+        "value": 1816,
+        "unit": "ns/op",
+        "extra": "6490090 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+        "value": 115,
+        "unit": "B/op",
+        "extra": "6490090 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6490090 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      }
+    ]
+  },
+  {
+    "commit": {
+      "sha": "970df2bd0903e598aacd314bf04825becc8bf4ec",
+      "message": "up benchmarks action",
+      "author": "royalcat",
+      "date": "2026-02-19T16:42:19+04:00",
+      "url": "https://github.com/royalcat/osmpbfdb/commit/970df2bd0903e598aacd314bf04825becc8bf4ec"
+    },
+    "date": 1771504939000,
+    "params": {
+      "cpu": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+      "goos": "linux",
+      "goarch": "amd64",
+      "goVersion": "go1.25.7",
+      "cgo": true
+    },
+    "benchmarks": [
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none",
+        "value": 2350686,
+        "unit": "ns/op",
+        "extra": "5049 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+        "value": 4037906,
+        "unit": "B/op",
+        "extra": "5049 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+        "value": 8613,
+        "unit": "allocs/op",
+        "extra": "5049 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none",
+        "value": 2395631,
+        "unit": "ns/op",
+        "extra": "4941 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+        "value": 4318380,
+        "unit": "B/op",
+        "extra": "4941 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+        "value": 8626,
+        "unit": "allocs/op",
+        "extra": "4941 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru",
+        "value": 1667,
+        "unit": "ns/op",
+        "extra": "6955929 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "6955929 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6955929 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru",
+        "value": 1613,
+        "unit": "ns/op",
+        "extra": "7054341 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "7054341 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "7054341 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+        "value": 1646,
+        "unit": "ns/op",
+        "extra": "6239827 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+        "value": 133,
+        "unit": "B/op",
+        "extra": "6239827 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6239827 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+        "value": 1634,
+        "unit": "ns/op",
+        "extra": "6423792 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+        "value": 129,
+        "unit": "B/op",
+        "extra": "6423792 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6423792 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none",
+        "value": 2444484,
+        "unit": "ns/op",
+        "extra": "4915 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+        "value": 2792537,
+        "unit": "B/op",
+        "extra": "4915 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+        "value": 8650,
+        "unit": "allocs/op",
+        "extra": "4915 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none",
+        "value": 2448311,
+        "unit": "ns/op",
+        "extra": "4857 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+        "value": 2719716,
+        "unit": "B/op",
+        "extra": "4857 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+        "value": 8662,
+        "unit": "allocs/op",
+        "extra": "4857 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru",
+        "value": 1715,
+        "unit": "ns/op",
+        "extra": "7111014 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "7111014 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "7111014 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru",
+        "value": 1700,
+        "unit": "ns/op",
+        "extra": "6997362 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "6997362 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6997362 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+        "value": 1713,
+        "unit": "ns/op",
+        "extra": "6727414 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+        "value": 127,
+        "unit": "B/op",
+        "extra": "6727414 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "6727414 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+        "value": 1668,
+        "unit": "ns/op",
+        "extra": "7374688 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "7374688 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "7374688 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      }
+    ]
+  },
+  {
+    "commit": {
+      "sha": "970df2bd0903e598aacd314bf04825becc8bf4ec",
+      "message": "up benchmarks action",
+      "author": "royalcat",
+      "date": "2026-02-19T16:42:19+04:00",
+      "url": "https://github.com/royalcat/osmpbfdb/commit/970df2bd0903e598aacd314bf04825becc8bf4ec"
+    },
+    "date": 1771504939000,
+    "params": {
+      "cpu": "Neoverse-N2",
+      "goos": "linux",
+      "goarch": "arm64",
+      "goVersion": "go1.25.7",
+      "cgo": false
+    },
+    "benchmarks": [
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none",
+        "value": 2561906,
+        "unit": "ns/op",
+        "extra": "4951 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+        "value": 5447346,
+        "unit": "B/op",
+        "extra": "4951 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+        "value": 8727,
+        "unit": "allocs/op",
+        "extra": "4951 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none",
+        "value": 2513465,
+        "unit": "ns/op",
+        "extra": "4516 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+        "value": 4690964,
+        "unit": "B/op",
+        "extra": "4516 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+        "value": 8751,
+        "unit": "allocs/op",
+        "extra": "4516 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru",
+        "value": 2721,
+        "unit": "ns/op",
+        "extra": "4454320 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "4454320 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "4454320 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru",
+        "value": 2751,
+        "unit": "ns/op",
+        "extra": "4465671 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "4465671 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "4465671 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+        "value": 2898,
+        "unit": "ns/op",
+        "extra": "4092313 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+        "value": 244,
+        "unit": "B/op",
+        "extra": "4092313 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "4092313 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+        "value": 2764,
+        "unit": "ns/op",
+        "extra": "4292238 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+        "value": 198,
+        "unit": "B/op",
+        "extra": "4292238 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "4292238 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none",
+        "value": 2400761,
+        "unit": "ns/op",
+        "extra": "5379 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+        "value": 2819484,
+        "unit": "B/op",
+        "extra": "5379 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+        "value": 8745,
+        "unit": "allocs/op",
+        "extra": "5379 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none",
+        "value": 2393967,
+        "unit": "ns/op",
+        "extra": "4852 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+        "value": 2749359,
+        "unit": "B/op",
+        "extra": "4852 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+        "value": 8731,
+        "unit": "allocs/op",
+        "extra": "4852 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru",
+        "value": 2728,
+        "unit": "ns/op",
+        "extra": "4420876 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "4420876 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "4420876 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru",
+        "value": 2667,
+        "unit": "ns/op",
+        "extra": "4386376 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "4386376 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "4386376 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+        "value": 2699,
+        "unit": "ns/op",
+        "extra": "4506114 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "4506114 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "4506114 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+        "value": 2692,
+        "unit": "ns/op",
+        "extra": "4170034 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+        "value": 146,
+        "unit": "B/op",
+        "extra": "4170034 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "4170034 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      }
+    ]
+  },
+  {
+    "commit": {
+      "sha": "970df2bd0903e598aacd314bf04825becc8bf4ec",
+      "message": "up benchmarks action",
+      "author": "royalcat",
+      "date": "2026-02-19T16:42:19+04:00",
+      "url": "https://github.com/royalcat/osmpbfdb/commit/970df2bd0903e598aacd314bf04825becc8bf4ec"
+    },
+    "date": 1771504939000,
+    "params": {
+      "cpu": "Neoverse-N2",
+      "goos": "linux",
+      "goarch": "arm64",
+      "goVersion": "go1.25.7",
+      "cgo": true
+    },
+    "benchmarks": [
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none",
+        "value": 2009359,
+        "unit": "ns/op",
+        "extra": "5886 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+        "value": 4728738,
+        "unit": "B/op",
+        "extra": "5886 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+        "value": 8651,
+        "unit": "allocs/op",
+        "extra": "5886 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none",
+        "value": 2006978,
+        "unit": "ns/op",
+        "extra": "6105 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - B/op",
+        "value": 4926643,
+        "unit": "B/op",
+        "extra": "6105 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_none - allocs/op",
+        "value": 8604,
+        "unit": "allocs/op",
+        "extra": "6105 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru",
+        "value": 2198,
+        "unit": "ns/op",
+        "extra": "5379256 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "5379256 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "5379256 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru",
+        "value": 2182,
+        "unit": "ns/op",
+        "extra": "5480208 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "5480208 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "5480208 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+        "value": 2209,
+        "unit": "ns/op",
+        "extra": "5236714 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+        "value": 237,
+        "unit": "B/op",
+        "extra": "5236714 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "5236714 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC",
+        "value": 2118,
+        "unit": "ns/op",
+        "extra": "5401485 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - B/op",
+        "value": 117,
+        "unit": "B/op",
+        "extra": "5401485 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_descriptor/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "5401485 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none",
+        "value": 1877514,
+        "unit": "ns/op",
+        "extra": "6711 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+        "value": 2745489,
+        "unit": "B/op",
+        "extra": "6711 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+        "value": 8659,
+        "unit": "allocs/op",
+        "extra": "6711 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none",
+        "value": 1874348,
+        "unit": "ns/op",
+        "extra": "6414 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - B/op",
+        "value": 2731430,
+        "unit": "B/op",
+        "extra": "6414 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_none - allocs/op",
+        "value": 8650,
+        "unit": "allocs/op",
+        "extra": "6414 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru",
+        "value": 2180,
+        "unit": "ns/op",
+        "extra": "5602702 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "5602702 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "5602702 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru",
+        "value": 2117,
+        "unit": "ns/op",
+        "extra": "5481204 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "5481204 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_lru - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "5481204 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+        "value": 2161,
+        "unit": "ns/op",
+        "extra": "5698701 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "5698701 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "5698701 times\n1 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 1
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC",
+        "value": 2155,
+        "unit": "ns/op",
+        "extra": "5687888 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - B/op",
+        "value": 112,
+        "unit": "B/op",
+        "extra": "5687888 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      },
+      {
+        "name": "BenchmarkGet/file_mmap/cache_weak_defaultGC - allocs/op",
+        "value": 1,
+        "unit": "allocs/op",
+        "extra": "5687888 times\n4 procs",
+        "package": "github.com/royalcat/osmpbfdb",
+        "procs": 4
+      }
+    ]
   }
 ]
