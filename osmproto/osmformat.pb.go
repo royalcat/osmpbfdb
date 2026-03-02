@@ -95,12 +95,10 @@ type HeaderBlock struct {
 	xxx_hidden_OsmosisReplicationTimestamp      int64                  `protobuf:"varint,32,opt,name=osmosis_replication_timestamp,json=osmosisReplicationTimestamp"`
 	xxx_hidden_OsmosisReplicationSequenceNumber int64                  `protobuf:"varint,33,opt,name=osmosis_replication_sequence_number,json=osmosisReplicationSequenceNumber"`
 	xxx_hidden_OsmosisReplicationBaseUrl        *string                `protobuf:"bytes,34,opt,name=osmosis_replication_base_url,json=osmosisReplicationBaseUrl"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	XXX_raceDetectHookData                      protoimpl.RaceDetectHookData
+	XXX_presence                                [1]uint32
+	unknownFields                               protoimpl.UnknownFields
+	sizeCache                                   protoimpl.SizeCache
 }
 
 func (x *HeaderBlock) Reset() {
@@ -130,14 +128,7 @@ func (x *HeaderBlock) ProtoReflect() protoreflect.Message {
 
 func (x *HeaderBlock) GetBbox() *HeaderBBox {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Bbox) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *HeaderBBox
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Bbox), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.xxx_hidden_Bbox
 	}
 	return nil
 }
@@ -201,12 +192,7 @@ func (x *HeaderBlock) GetOsmosisReplicationBaseUrl() string {
 }
 
 func (x *HeaderBlock) SetBbox(v *HeaderBBox) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Bbox, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
-	}
+	x.xxx_hidden_Bbox = v
 }
 
 func (x *HeaderBlock) SetRequiredFeatures(v []string) {
@@ -246,7 +232,7 @@ func (x *HeaderBlock) HasBbox() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.xxx_hidden_Bbox != nil
 }
 
 func (x *HeaderBlock) HasWritingprogram() bool {
@@ -285,8 +271,7 @@ func (x *HeaderBlock) HasOsmosisReplicationBaseUrl() bool {
 }
 
 func (x *HeaderBlock) ClearBbox() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Bbox, (*HeaderBBox)(nil))
+	x.xxx_hidden_Bbox = nil
 }
 
 func (x *HeaderBlock) ClearWritingprogram() {
@@ -337,10 +322,7 @@ func (b0 HeaderBlock_builder) Build() *HeaderBlock {
 	m0 := &HeaderBlock{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Bbox != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
-		x.xxx_hidden_Bbox = b.Bbox
-	}
+	x.xxx_hidden_Bbox = b.Bbox
 	x.xxx_hidden_RequiredFeatures = b.RequiredFeatures
 	x.xxx_hidden_OptionalFeatures = b.OptionalFeatures
 	if b.Writingprogram != nil {
@@ -539,12 +521,10 @@ type PrimitiveBlock struct {
 	xxx_hidden_LatOffset       int64                  `protobuf:"varint,19,opt,name=lat_offset,json=latOffset,def=0"`
 	xxx_hidden_LonOffset       int64                  `protobuf:"varint,20,opt,name=lon_offset,json=lonOffset,def=0"`
 	xxx_hidden_DateGranularity int32                  `protobuf:"varint,18,opt,name=date_granularity,json=dateGranularity,def=1000"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 // Default values for PrimitiveBlock fields.
@@ -589,13 +569,8 @@ func (x *PrimitiveBlock) GetStringtable() *StringTable {
 
 func (x *PrimitiveBlock) GetPrimitivegroup() []*PrimitiveGroup {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Primitivegroup) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*PrimitiveGroup
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Primitivegroup), protoimpl.Pointer(&rv))
-			return *rv
+		if x.xxx_hidden_Primitivegroup != nil {
+			return *x.xxx_hidden_Primitivegroup
 		}
 	}
 	return nil
@@ -642,14 +617,7 @@ func (x *PrimitiveBlock) SetStringtable(v *StringTable) {
 }
 
 func (x *PrimitiveBlock) SetPrimitivegroup(v []*PrimitiveGroup) {
-	var sv *[]*PrimitiveGroup
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Primitivegroup), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*PrimitiveGroup{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Primitivegroup), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.xxx_hidden_Primitivegroup = &v
 }
 
 func (x *PrimitiveBlock) SetGranularity(v int32) {
@@ -748,10 +716,7 @@ func (b0 PrimitiveBlock_builder) Build() *PrimitiveBlock {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Stringtable = b.Stringtable
-	if b.Primitivegroup != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Primitivegroup = &b.Primitivegroup
-	}
+	x.xxx_hidden_Primitivegroup = &b.Primitivegroup
 	if b.Granularity != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
 		x.xxx_hidden_Granularity = *b.Granularity
@@ -779,12 +744,8 @@ type PrimitiveGroup struct {
 	xxx_hidden_Ways       *[]*Way                `protobuf:"bytes,3,rep,name=ways"`
 	xxx_hidden_Relations  *[]*Relation           `protobuf:"bytes,4,rep,name=relations"`
 	xxx_hidden_Changesets *[]*ChangeSet          `protobuf:"bytes,5,rep,name=changesets"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *PrimitiveGroup) Reset() {
@@ -814,13 +775,8 @@ func (x *PrimitiveGroup) ProtoReflect() protoreflect.Message {
 
 func (x *PrimitiveGroup) GetNodes() []*Node {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Nodes) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*Node
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nodes), protoimpl.Pointer(&rv))
-			return *rv
+		if x.xxx_hidden_Nodes != nil {
+			return *x.xxx_hidden_Nodes
 		}
 	}
 	return nil
@@ -828,27 +784,15 @@ func (x *PrimitiveGroup) GetNodes() []*Node {
 
 func (x *PrimitiveGroup) GetDense() *DenseNodes {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Dense) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *DenseNodes
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Dense), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.xxx_hidden_Dense
 	}
 	return nil
 }
 
 func (x *PrimitiveGroup) GetWays() []*Way {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ways) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*Way
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ways), protoimpl.Pointer(&rv))
-			return *rv
+		if x.xxx_hidden_Ways != nil {
+			return *x.xxx_hidden_Ways
 		}
 	}
 	return nil
@@ -856,13 +800,8 @@ func (x *PrimitiveGroup) GetWays() []*Way {
 
 func (x *PrimitiveGroup) GetRelations() []*Relation {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Relations) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*Relation
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Relations), protoimpl.Pointer(&rv))
-			return *rv
+		if x.xxx_hidden_Relations != nil {
+			return *x.xxx_hidden_Relations
 		}
 	}
 	return nil
@@ -870,81 +809,42 @@ func (x *PrimitiveGroup) GetRelations() []*Relation {
 
 func (x *PrimitiveGroup) GetChangesets() []*ChangeSet {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Changesets) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *[]*ChangeSet
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Changesets), protoimpl.Pointer(&rv))
-			return *rv
+		if x.xxx_hidden_Changesets != nil {
+			return *x.xxx_hidden_Changesets
 		}
 	}
 	return nil
 }
 
 func (x *PrimitiveGroup) SetNodes(v []*Node) {
-	var sv *[]*Node
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nodes), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Node{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Nodes), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.xxx_hidden_Nodes = &v
 }
 
 func (x *PrimitiveGroup) SetDense(v *DenseNodes) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Dense, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
-	}
+	x.xxx_hidden_Dense = v
 }
 
 func (x *PrimitiveGroup) SetWays(v []*Way) {
-	var sv *[]*Way
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ways), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Way{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ways), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.xxx_hidden_Ways = &v
 }
 
 func (x *PrimitiveGroup) SetRelations(v []*Relation) {
-	var sv *[]*Relation
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Relations), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Relation{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Relations), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.xxx_hidden_Relations = &v
 }
 
 func (x *PrimitiveGroup) SetChangesets(v []*ChangeSet) {
-	var sv *[]*ChangeSet
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Changesets), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ChangeSet{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Changesets), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
+	x.xxx_hidden_Changesets = &v
 }
 
 func (x *PrimitiveGroup) HasDense() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.xxx_hidden_Dense != nil
 }
 
 func (x *PrimitiveGroup) ClearDense() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Dense, (*DenseNodes)(nil))
+	x.xxx_hidden_Dense = nil
 }
 
 type PrimitiveGroup_builder struct {
@@ -961,26 +861,11 @@ func (b0 PrimitiveGroup_builder) Build() *PrimitiveGroup {
 	m0 := &PrimitiveGroup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nodes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Nodes = &b.Nodes
-	}
-	if b.Dense != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_Dense = b.Dense
-	}
-	if b.Ways != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_Ways = &b.Ways
-	}
-	if b.Relations != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_Relations = &b.Relations
-	}
-	if b.Changesets != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_Changesets = &b.Changesets
-	}
+	x.xxx_hidden_Nodes = &b.Nodes
+	x.xxx_hidden_Dense = b.Dense
+	x.xxx_hidden_Ways = &b.Ways
+	x.xxx_hidden_Relations = &b.Relations
+	x.xxx_hidden_Changesets = &b.Changesets
 	return m0
 }
 
@@ -1499,15 +1384,13 @@ func (b0 ChangeSet_builder) Build() *ChangeSet {
 }
 
 type Node struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id   int64                  `protobuf:"zigzag64,1,opt,name=id"`
-	xxx_hidden_Keys []uint32               `protobuf:"varint,2,rep,packed,name=keys"`
-	xxx_hidden_Vals []uint32               `protobuf:"varint,3,rep,packed,name=vals"`
-	xxx_hidden_Info *Info                  `protobuf:"bytes,4,opt,name=info"`
-	xxx_hidden_Lat  int64                  `protobuf:"zigzag64,8,opt,name=lat"`
-	xxx_hidden_Lon  int64                  `protobuf:"zigzag64,9,opt,name=lon"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          int64                  `protobuf:"zigzag64,1,opt,name=id"`
+	xxx_hidden_Keys        []uint32               `protobuf:"varint,2,rep,packed,name=keys"`
+	xxx_hidden_Vals        []uint32               `protobuf:"varint,3,rep,packed,name=vals"`
+	xxx_hidden_Info        *Info                  `protobuf:"bytes,4,opt,name=info"`
+	xxx_hidden_Lat         int64                  `protobuf:"zigzag64,8,opt,name=lat"`
+	xxx_hidden_Lon         int64                  `protobuf:"zigzag64,9,opt,name=lon"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1562,14 +1445,7 @@ func (x *Node) GetVals() []uint32 {
 
 func (x *Node) GetInfo() *Info {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Info) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *Info
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Info), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.xxx_hidden_Info
 	}
 	return nil
 }
@@ -1602,12 +1478,7 @@ func (x *Node) SetVals(v []uint32) {
 }
 
 func (x *Node) SetInfo(v *Info) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Info, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
-	}
+	x.xxx_hidden_Info = v
 }
 
 func (x *Node) SetLat(v int64) {
@@ -1631,7 +1502,7 @@ func (x *Node) HasInfo() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.xxx_hidden_Info != nil
 }
 
 func (x *Node) HasLat() bool {
@@ -1654,8 +1525,7 @@ func (x *Node) ClearId() {
 }
 
 func (x *Node) ClearInfo() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Info, (*Info)(nil))
+	x.xxx_hidden_Info = nil
 }
 
 func (x *Node) ClearLat() {
@@ -1690,10 +1560,7 @@ func (b0 Node_builder) Build() *Node {
 	}
 	x.xxx_hidden_Keys = b.Keys
 	x.xxx_hidden_Vals = b.Vals
-	if b.Info != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_Info = b.Info
-	}
+	x.xxx_hidden_Info = b.Info
 	if b.Lat != nil {
 		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
 		x.xxx_hidden_Lat = *b.Lat
@@ -1712,12 +1579,8 @@ type DenseNodes struct {
 	xxx_hidden_Lat       []int64                `protobuf:"zigzag64,8,rep,packed,name=lat"`
 	xxx_hidden_Lon       []int64                `protobuf:"zigzag64,9,rep,packed,name=lon"`
 	xxx_hidden_KeysVals  []int32                `protobuf:"varint,10,rep,packed,name=keys_vals,json=keysVals"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *DenseNodes) Reset() {
@@ -1754,14 +1617,7 @@ func (x *DenseNodes) GetId() []int64 {
 
 func (x *DenseNodes) GetDenseinfo() *DenseInfo {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Denseinfo) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *DenseInfo
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Denseinfo), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.xxx_hidden_Denseinfo
 	}
 	return nil
 }
@@ -1792,12 +1648,7 @@ func (x *DenseNodes) SetId(v []int64) {
 }
 
 func (x *DenseNodes) SetDenseinfo(v *DenseInfo) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Denseinfo, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
-	}
+	x.xxx_hidden_Denseinfo = v
 }
 
 func (x *DenseNodes) SetLat(v []int64) {
@@ -1816,12 +1667,11 @@ func (x *DenseNodes) HasDenseinfo() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.xxx_hidden_Denseinfo != nil
 }
 
 func (x *DenseNodes) ClearDenseinfo() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Denseinfo, (*DenseInfo)(nil))
+	x.xxx_hidden_Denseinfo = nil
 }
 
 type DenseNodes_builder struct {
@@ -1841,10 +1691,7 @@ func (b0 DenseNodes_builder) Build() *DenseNodes {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Id = b.Id
-	if b.Denseinfo != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_Denseinfo = b.Denseinfo
-	}
+	x.xxx_hidden_Denseinfo = b.Denseinfo
 	x.xxx_hidden_Lat = b.Lat
 	x.xxx_hidden_Lon = b.Lon
 	x.xxx_hidden_KeysVals = b.KeysVals
@@ -1852,16 +1699,14 @@ func (b0 DenseNodes_builder) Build() *DenseNodes {
 }
 
 type Way struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id   int64                  `protobuf:"varint,1,opt,name=id"`
-	xxx_hidden_Keys []uint32               `protobuf:"varint,2,rep,packed,name=keys"`
-	xxx_hidden_Vals []uint32               `protobuf:"varint,3,rep,packed,name=vals"`
-	xxx_hidden_Info *Info                  `protobuf:"bytes,4,opt,name=info"`
-	xxx_hidden_Refs []int64                `protobuf:"zigzag64,8,rep,packed,name=refs"`
-	xxx_hidden_Lat  []int64                `protobuf:"zigzag64,9,rep,packed,name=lat"`
-	xxx_hidden_Lon  []int64                `protobuf:"zigzag64,10,rep,packed,name=lon"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          int64                  `protobuf:"varint,1,opt,name=id"`
+	xxx_hidden_Keys        []uint32               `protobuf:"varint,2,rep,packed,name=keys"`
+	xxx_hidden_Vals        []uint32               `protobuf:"varint,3,rep,packed,name=vals"`
+	xxx_hidden_Info        *Info                  `protobuf:"bytes,4,opt,name=info"`
+	xxx_hidden_Refs        []int64                `protobuf:"zigzag64,8,rep,packed,name=refs"`
+	xxx_hidden_Lat         []int64                `protobuf:"zigzag64,9,rep,packed,name=lat"`
+	xxx_hidden_Lon         []int64                `protobuf:"zigzag64,10,rep,packed,name=lon"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -1916,14 +1761,7 @@ func (x *Way) GetVals() []uint32 {
 
 func (x *Way) GetInfo() *Info {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Info) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *Info
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Info), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.xxx_hidden_Info
 	}
 	return nil
 }
@@ -1963,12 +1801,7 @@ func (x *Way) SetVals(v []uint32) {
 }
 
 func (x *Way) SetInfo(v *Info) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Info, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
-	}
+	x.xxx_hidden_Info = v
 }
 
 func (x *Way) SetRefs(v []int64) {
@@ -1994,7 +1827,7 @@ func (x *Way) HasInfo() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.xxx_hidden_Info != nil
 }
 
 func (x *Way) ClearId() {
@@ -2003,8 +1836,7 @@ func (x *Way) ClearId() {
 }
 
 func (x *Way) ClearInfo() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Info, (*Info)(nil))
+	x.xxx_hidden_Info = nil
 }
 
 type Way_builder struct {
@@ -2036,10 +1868,7 @@ func (b0 Way_builder) Build() *Way {
 	}
 	x.xxx_hidden_Keys = b.Keys
 	x.xxx_hidden_Vals = b.Vals
-	if b.Info != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_Info = b.Info
-	}
+	x.xxx_hidden_Info = b.Info
 	x.xxx_hidden_Refs = b.Refs
 	x.xxx_hidden_Lat = b.Lat
 	x.xxx_hidden_Lon = b.Lon
@@ -2047,16 +1876,14 @@ func (b0 Way_builder) Build() *Way {
 }
 
 type Relation struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id       int64                  `protobuf:"varint,1,opt,name=id"`
-	xxx_hidden_Keys     []uint32               `protobuf:"varint,2,rep,packed,name=keys"`
-	xxx_hidden_Vals     []uint32               `protobuf:"varint,3,rep,packed,name=vals"`
-	xxx_hidden_Info     *Info                  `protobuf:"bytes,4,opt,name=info"`
-	xxx_hidden_RolesSid []int32                `protobuf:"varint,8,rep,packed,name=roles_sid,json=rolesSid"`
-	xxx_hidden_Memids   []int64                `protobuf:"zigzag64,9,rep,packed,name=memids"`
-	xxx_hidden_Types    []Relation_MemberType  `protobuf:"varint,10,rep,packed,name=types,enum=osmproto.Relation_MemberType"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          int64                  `protobuf:"varint,1,opt,name=id"`
+	xxx_hidden_Keys        []uint32               `protobuf:"varint,2,rep,packed,name=keys"`
+	xxx_hidden_Vals        []uint32               `protobuf:"varint,3,rep,packed,name=vals"`
+	xxx_hidden_Info        *Info                  `protobuf:"bytes,4,opt,name=info"`
+	xxx_hidden_RolesSid    []int32                `protobuf:"varint,8,rep,packed,name=roles_sid,json=rolesSid"`
+	xxx_hidden_Memids      []int64                `protobuf:"zigzag64,9,rep,packed,name=memids"`
+	xxx_hidden_Types       []Relation_MemberType  `protobuf:"varint,10,rep,packed,name=types,enum=osmproto.Relation_MemberType"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -2111,14 +1938,7 @@ func (x *Relation) GetVals() []uint32 {
 
 func (x *Relation) GetInfo() *Info {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Info) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *Info
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Info), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.xxx_hidden_Info
 	}
 	return nil
 }
@@ -2158,12 +1978,7 @@ func (x *Relation) SetVals(v []uint32) {
 }
 
 func (x *Relation) SetInfo(v *Info) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Info, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
-	}
+	x.xxx_hidden_Info = v
 }
 
 func (x *Relation) SetRolesSid(v []int32) {
@@ -2189,7 +2004,7 @@ func (x *Relation) HasInfo() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.xxx_hidden_Info != nil
 }
 
 func (x *Relation) ClearId() {
@@ -2198,8 +2013,7 @@ func (x *Relation) ClearId() {
 }
 
 func (x *Relation) ClearInfo() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Info, (*Info)(nil))
+	x.xxx_hidden_Info = nil
 }
 
 type Relation_builder struct {
@@ -2227,10 +2041,7 @@ func (b0 Relation_builder) Build() *Relation {
 	}
 	x.xxx_hidden_Keys = b.Keys
 	x.xxx_hidden_Vals = b.Vals
-	if b.Info != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_Info = b.Info
-	}
+	x.xxx_hidden_Info = b.Info
 	x.xxx_hidden_RolesSid = b.RolesSid
 	x.xxx_hidden_Memids = b.Memids
 	x.xxx_hidden_Types = b.Types
@@ -2241,9 +2052,9 @@ var File_osmproto_osmformat_proto protoreflect.FileDescriptor
 
 const file_osmproto_osmformat_proto_rawDesc = "" +
 	"\n" +
-	"\x18osmproto/osmformat.proto\x12\bosmproto\"\xa9\x03\n" +
-	"\vHeaderBlock\x12,\n" +
-	"\x04bbox\x18\x01 \x01(\v2\x14.osmproto.HeaderBBoxB\x02(\x01R\x04bbox\x12+\n" +
+	"\x18osmproto/osmformat.proto\x12\bosmproto\"\xa5\x03\n" +
+	"\vHeaderBlock\x12(\n" +
+	"\x04bbox\x18\x01 \x01(\v2\x14.osmproto.HeaderBBoxR\x04bbox\x12+\n" +
 	"\x11required_features\x18\x04 \x03(\tR\x10requiredFeatures\x12+\n" +
 	"\x11optional_features\x18\x05 \x03(\tR\x10optionalFeatures\x12&\n" +
 	"\x0ewritingprogram\x18\x10 \x01(\tR\x0ewritingprogram\x12\x16\n" +
@@ -2256,23 +2067,23 @@ const file_osmproto_osmformat_proto_rawDesc = "" +
 	"\x04left\x18\x01 \x01(\x12R\x04left\x12\x14\n" +
 	"\x05right\x18\x02 \x01(\x12R\x05right\x12\x10\n" +
 	"\x03top\x18\x03 \x01(\x12R\x03top\x12\x16\n" +
-	"\x06bottom\x18\x04 \x01(\x12R\x06bottom\"\xab\x02\n" +
+	"\x06bottom\x18\x04 \x01(\x12R\x06bottom\"\xa7\x02\n" +
 	"\x0ePrimitiveBlock\x127\n" +
-	"\vstringtable\x18\x01 \x01(\v2\x15.osmproto.StringTableR\vstringtable\x12D\n" +
-	"\x0eprimitivegroup\x18\x02 \x03(\v2\x18.osmproto.PrimitiveGroupB\x02(\x01R\x0eprimitivegroup\x12%\n" +
+	"\vstringtable\x18\x01 \x01(\v2\x15.osmproto.StringTableR\vstringtable\x12@\n" +
+	"\x0eprimitivegroup\x18\x02 \x03(\v2\x18.osmproto.PrimitiveGroupR\x0eprimitivegroup\x12%\n" +
 	"\vgranularity\x18\x11 \x01(\x05:\x03100R\vgranularity\x12 \n" +
 	"\n" +
 	"lat_offset\x18\x13 \x01(\x03:\x010R\tlatOffset\x12 \n" +
 	"\n" +
 	"lon_offset\x18\x14 \x01(\x03:\x010R\tlonOffset\x12/\n" +
-	"\x10date_granularity\x18\x12 \x01(\x05:\x041000R\x0fdateGranularity\"\x80\x02\n" +
-	"\x0ePrimitiveGroup\x12(\n" +
-	"\x05nodes\x18\x01 \x03(\v2\x0e.osmproto.NodeB\x02(\x01R\x05nodes\x12.\n" +
-	"\x05dense\x18\x02 \x01(\v2\x14.osmproto.DenseNodesB\x02(\x01R\x05dense\x12%\n" +
-	"\x04ways\x18\x03 \x03(\v2\r.osmproto.WayB\x02(\x01R\x04ways\x124\n" +
-	"\trelations\x18\x04 \x03(\v2\x12.osmproto.RelationB\x02(\x01R\trelations\x127\n" +
+	"\x10date_granularity\x18\x12 \x01(\x05:\x041000R\x0fdateGranularity\"\xec\x01\n" +
+	"\x0ePrimitiveGroup\x12$\n" +
+	"\x05nodes\x18\x01 \x03(\v2\x0e.osmproto.NodeR\x05nodes\x12*\n" +
+	"\x05dense\x18\x02 \x01(\v2\x14.osmproto.DenseNodesR\x05dense\x12!\n" +
+	"\x04ways\x18\x03 \x03(\v2\r.osmproto.WayR\x04ways\x120\n" +
+	"\trelations\x18\x04 \x03(\v2\x12.osmproto.RelationR\trelations\x123\n" +
 	"\n" +
-	"changesets\x18\x05 \x03(\v2\x13.osmproto.ChangeSetB\x02(\x01R\n" +
+	"changesets\x18\x05 \x03(\v2\x13.osmproto.ChangeSetR\n" +
 	"changesets\"\x1b\n" +
 	"\vStringTable\x12\f\n" +
 	"\x01s\x18\x01 \x03(\tR\x01s\"\xa7\x01\n" +
@@ -2291,36 +2102,36 @@ const file_osmproto_osmformat_proto_rawDesc = "" +
 	"\buser_sid\x18\x05 \x03(\x11R\auserSid\x12\x18\n" +
 	"\avisible\x18\x06 \x03(\bR\avisible\"\x1b\n" +
 	"\tChangeSet\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\"\x8a\x01\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"\x86\x01\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x12R\x02id\x12\x12\n" +
 	"\x04keys\x18\x02 \x03(\rR\x04keys\x12\x12\n" +
-	"\x04vals\x18\x03 \x03(\rR\x04vals\x12&\n" +
-	"\x04info\x18\x04 \x01(\v2\x0e.osmproto.InfoB\x02(\x01R\x04info\x12\x10\n" +
+	"\x04vals\x18\x03 \x03(\rR\x04vals\x12\"\n" +
+	"\x04info\x18\x04 \x01(\v2\x0e.osmproto.InfoR\x04info\x12\x10\n" +
 	"\x03lat\x18\b \x01(\x12R\x03lat\x12\x10\n" +
-	"\x03lon\x18\t \x01(\x12R\x03lon\"\x94\x01\n" +
+	"\x03lon\x18\t \x01(\x12R\x03lon\"\x90\x01\n" +
 	"\n" +
 	"DenseNodes\x12\x0e\n" +
-	"\x02id\x18\x01 \x03(\x12R\x02id\x125\n" +
-	"\tdenseinfo\x18\x05 \x01(\v2\x13.osmproto.DenseInfoB\x02(\x01R\tdenseinfo\x12\x10\n" +
+	"\x02id\x18\x01 \x03(\x12R\x02id\x121\n" +
+	"\tdenseinfo\x18\x05 \x01(\v2\x13.osmproto.DenseInfoR\tdenseinfo\x12\x10\n" +
 	"\x03lat\x18\b \x03(\x12R\x03lat\x12\x10\n" +
 	"\x03lon\x18\t \x03(\x12R\x03lon\x12\x1b\n" +
 	"\tkeys_vals\x18\n" +
-	" \x03(\x05R\bkeysVals\"\x9d\x01\n" +
+	" \x03(\x05R\bkeysVals\"\x99\x01\n" +
 	"\x03Way\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04keys\x18\x02 \x03(\rR\x04keys\x12\x12\n" +
-	"\x04vals\x18\x03 \x03(\rR\x04vals\x12&\n" +
-	"\x04info\x18\x04 \x01(\v2\x0e.osmproto.InfoB\x02(\x01R\x04info\x12\x12\n" +
+	"\x04vals\x18\x03 \x03(\rR\x04vals\x12\"\n" +
+	"\x04info\x18\x04 \x01(\v2\x0e.osmproto.InfoR\x04info\x12\x12\n" +
 	"\x04refs\x18\b \x03(\x12R\x04refs\x12\x10\n" +
 	"\x03lat\x18\t \x03(\x12R\x03lat\x12\x10\n" +
 	"\x03lon\x18\n" +
-	" \x03(\x12R\x03lon\"\x83\x02\n" +
+	" \x03(\x12R\x03lon\"\xff\x01\n" +
 	"\bRelation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04keys\x18\x02 \x03(\rR\x04keys\x12\x12\n" +
-	"\x04vals\x18\x03 \x03(\rR\x04vals\x12&\n" +
-	"\x04info\x18\x04 \x01(\v2\x0e.osmproto.InfoB\x02(\x01R\x04info\x12\x1b\n" +
+	"\x04vals\x18\x03 \x03(\rR\x04vals\x12\"\n" +
+	"\x04info\x18\x04 \x01(\v2\x0e.osmproto.InfoR\x04info\x12\x1b\n" +
 	"\troles_sid\x18\b \x03(\x05R\brolesSid\x12\x16\n" +
 	"\x06memids\x18\t \x03(\x12R\x06memids\x123\n" +
 	"\x05types\x18\n" +

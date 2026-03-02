@@ -11,14 +11,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func allocBlobData() []byte {
-	return make([]byte, MaxBlobSize)
-}
-
-var (
-	blobDataPool = newSyncPool(allocBlobData)
-)
-
 const decoderExtractLimit = (256 * 1024 * 1024) / MaxBlobSize
 
 var decoderExtractSemaphore = semaphore.NewWeighted(decoderExtractLimit)
@@ -39,12 +31,7 @@ func NewDecoderFromBlob(blob *osmproto.Blob, params ObjectDecoderParams) (*Objec
 	}
 	defer decoderExtractSemaphore.Release(1)
 
-	data := blobDataPool.Get()
-	defer func() {
-		blobDataPool.Put(data)
-	}()
-
-	data, err := extractData(blob, data)
+	data, err := extractData(blob, nil)
 	if err != nil {
 		return nil, err
 	}

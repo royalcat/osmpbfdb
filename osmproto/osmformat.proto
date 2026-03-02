@@ -62,7 +62,7 @@ coding when representing nodes and relations.
 /* Contains the file header. */
 
 message HeaderBlock {
-  HeaderBBox bbox = 1 [lazy = true];
+  HeaderBBox bbox = 1;
 
   /* Additional tags to aid in parsing this dataset */
   repeated string required_features = 4;
@@ -101,7 +101,7 @@ message HeaderBBox {
 
 message PrimitiveBlock {
   StringTable stringtable = 1;
-  repeated PrimitiveGroup primitivegroup = 2 [lazy = true];
+  repeated PrimitiveGroup primitivegroup = 2;
 
   // Granularity, units of nanodegrees, used to store coordinates in this block.
   int32 granularity = 17 [ default = 100 ];
@@ -118,11 +118,11 @@ message PrimitiveBlock {
 
 // Group of OSMPrimitives. All primitives in a group must be the same type.
 message PrimitiveGroup {
-  repeated Node nodes = 1 [lazy = true];
-  DenseNodes dense = 2 [lazy = true];
-  repeated Way ways = 3 [lazy = true];
-  repeated Relation relations = 4 [lazy = true];
-  repeated ChangeSet changesets = 5 [lazy = true];
+  repeated Node nodes = 1;
+  DenseNodes dense = 2;
+  repeated Way ways = 3;
+  repeated Relation relations = 4;
+  repeated ChangeSet changesets = 5;
 }
 
 /** String table, contains the common strings in each block.
@@ -182,7 +182,7 @@ message Node {
   repeated uint32 keys = 2; // String IDs.
   repeated uint32 vals = 3; // String IDs.
 
-  Info info = 4 [lazy = true]; // May be omitted in omitmeta
+  Info info = 4; // May be omitted in omitmeta
 
   sint64 lat = 8;
   sint64 lon = 9;
@@ -203,7 +203,7 @@ delimiter between nodes.
 message DenseNodes {
   repeated sint64 id = 1; // DELTA coded
 
-  DenseInfo denseinfo = 5 [lazy = true];
+  DenseInfo denseinfo = 5;
 
   repeated sint64 lat = 8; // DELTA coded
   repeated sint64 lon = 9; // DELTA coded
@@ -220,7 +220,7 @@ message Way {
   repeated uint32 keys = 2;
   repeated uint32 vals = 3;
 
-  Info info = 4 [lazy = true];
+  Info info = 4;
 
   repeated sint64 refs = 8; // DELTA coded
 
@@ -247,7 +247,7 @@ message Relation {
   repeated uint32 keys = 2;
   repeated uint32 vals = 3;
 
-  Info info = 4 [lazy = true];
+  Info info = 4;
 
   // Parallel arrays
   repeated int32 roles_sid = 8; // This should have been defined as uint32 for
