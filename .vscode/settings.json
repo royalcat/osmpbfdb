@@ -1,0 +1,4 @@
+{
+    "protobuf.buf.path": "/usr/bin/buf",
+    "protobuf.protoc.path": "/usr/bin/protoc"
+}
