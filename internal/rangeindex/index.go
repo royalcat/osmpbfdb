@@ -19,8 +19,6 @@ type Range[K ~int64] struct {
 
 const windowSize = 8 + 8 + 4
 
-var endian = binary.LittleEndian
-
 type IndexBuilder[K ~int64] struct {
 	mu sync.Mutex
 

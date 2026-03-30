@@ -103,6 +103,9 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 	})
 
 	group.Go(func() error {
+		var objectCount int64
+		var blobCount int64
+
 		objDecoderParams := osmblob.ObjectDecoderParams{
 			SkipInfo: true,
 		}
@@ -140,7 +143,12 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 			for _, relation := range relations {
 				relationIndexBuilder.Add(relation.ID, uint32(blobAt.offset))
 			}
+
+			objectCount += int64(len(nodes) + len(ways) + len(relations))
+			blobCount++
 		}
+
+		slog.Debug("log blob processing", slog.Int64("object_count", objectCount), slog.Int64("blob_count", blobCount), slog.Float64("avg_objects_per_blob", float64(objectCount)/float64(blobCount)))
 
 		return nil
 	})

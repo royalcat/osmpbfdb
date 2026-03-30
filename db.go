@@ -105,12 +105,9 @@ type objSelector struct {
 	Relations bool
 }
 
+const typicalBlobObjectsCount = 8000
+
 func (db *DB) readObjects(offset uint32, selector objSelector) ([]osm.Object, error) {
-	// objects, ok := db.readCache.Get(offset)
-	// if ok {
-	// 	return objects, nil
-	// }
-	//
 	objDecoderParams := osmblob.ObjectDecoderParams{
 		SkipInfo: db.skipInfo,
 	}
@@ -121,6 +118,8 @@ func (db *DB) readObjects(offset uint32, selector objSelector) ([]osm.Object, er
 		if ok {
 			return objects, nil
 		}
+
+		objects = make([]osm.Object, 0, typicalBlobObjectsCount)
 
 		_, _, blob, err := db.blobReader.ReadFileBlock(int64(offset))
 		if err != nil {
