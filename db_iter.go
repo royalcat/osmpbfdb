@@ -20,7 +20,7 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *rangeindex.Index[ID]) i
 	}
 
 	return func(yield func(T, error) bool) {
-		// this really just to prepare next chunk before it's needed, so buffer is big enough to hold a few chunks
+		// this really just to prepare next chunk before it's needed, so buffer should be just big enough to hold a few chunks
 		chunkChan := make(chan chunk, 2)
 
 		go func() {
