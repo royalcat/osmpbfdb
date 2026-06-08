@@ -109,7 +109,9 @@ func (dec *BlobReader) readBlobHeader(off int64, blobHeaderSize uint32) (*osmpro
 }
 
 var (
-	blobBuf   = make([]byte, MaxBlobSize)
+	blobBuf = sync.OnceValue(func() []byte {
+		return make([]byte, MaxBlobSize)
+	})
 	blobBufMu sync.Mutex
 )
 
@@ -117,7 +119,7 @@ func (dec *BlobReader) readBlob(off int64, blobSize int32) (*osmproto.Blob, erro
 	blobBufMu.Lock()
 	defer blobBufMu.Unlock()
 
-	buf := blobBuf[:blobSize]
+	buf := blobBuf()[:blobSize]
 
 	n, err := dec.r.ReadAt(buf, off)
 	if err != nil {
