@@ -1,0 +1,32 @@
+version: "2"
+linters:
+  enable:
+    - revive
+    #- exhaustruct
+    - nakedret
+    - gomoddirectives
+    - importas
+    - misspell
+    - promlinter
+    - prealloc
+    - predeclared
+    - errcheck
+  disable:
+    - ineffassign
+
+  settings:
+    revive:
+      severity: warning
+      rules:
+        - name: blank-imports
+          disabled: true
+    staticcheck:
+      checks:
+        - "-SA4006"
+    exhaustruct:
+      include:
+        - ".*Service"
+        - ".*Server.*"
+      exclude:
+        - ".*mutex"
+        - ".*mutex"

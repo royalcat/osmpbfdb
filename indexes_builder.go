@@ -123,7 +123,11 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 				return nil
 			}
 			for _, node := range nodes {
-				nodeIndexBuilder.Add(node.ID, uint32(blobAt.offset))
+				err := nodeIndexBuilder.Add(node.ID, uint32(blobAt.offset))
+				if err != nil {
+					log.Error("failed to add node to index", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+					return nil
+				}
 			}
 
 			ways, err := objDec.DecodeWays()
@@ -132,7 +136,11 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 				return nil
 			}
 			for _, way := range ways {
-				wayIndexBuilder.Add(way.ID, uint32(blobAt.offset))
+				err := wayIndexBuilder.Add(way.ID, uint32(blobAt.offset))
+				if err != nil {
+					log.Error("failed to add way to index", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+					return nil
+				}
 			}
 
 			relations, err := objDec.DecodeRelations()
@@ -141,7 +149,11 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 				return nil
 			}
 			for _, relation := range relations {
-				relationIndexBuilder.Add(relation.ID, uint32(blobAt.offset))
+				err := relationIndexBuilder.Add(relation.ID, uint32(blobAt.offset))
+				if err != nil {
+					log.Error("failed to add relation to index", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+					return nil
+				}
 			}
 
 			objectCount += int64(len(nodes) + len(ways) + len(relations))

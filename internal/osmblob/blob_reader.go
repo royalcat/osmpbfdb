@@ -194,19 +194,3 @@ func DecodeOSMHeader(blob *osmproto.Blob) (*Header, error) {
 
 	return header, nil
 }
-
-// data actually weighs more in memory than it does on disk, so we need to allocate more memory for it
-const blobSizeAmplifier = 16
-
-func costFromBlob(blob *osmproto.Blob) int64 {
-	if blob == nil {
-		return 0
-	}
-	if blob.GetRawSize() != 0 {
-		return int64(blob.GetRawSize()) * blobSizeAmplifier
-	}
-	if blob.GetRaw() != nil {
-		return int64(len(blob.GetRaw())) * blobSizeAmplifier
-	}
-	return MaxBlobSize * blobSizeAmplifier
-}

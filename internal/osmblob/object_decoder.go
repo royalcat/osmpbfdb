@@ -203,14 +203,10 @@ func (dec *ObjectDecoder) DecodeNodes() ([]*osm.Node, error) {
 			nodes = append(nodes, node)
 		}
 
-		// TODO
 		// if nodes := group.GetNodes(); nodes != nil {
 		// 	nodes = append(nodes, group.GetNodes()...)
 		// }
 	}
-
-	// MAYBE panic in ci for some reason
-	// nodes = slices.Clip(nodes)
 
 	return nodes, nil
 }

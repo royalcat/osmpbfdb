@@ -132,7 +132,6 @@ func (b *IndexBuilder[K]) Build() (*Index[K], error) {
 }
 
 type Index[K ~int64] struct {
-	file  *os.File
 	mmap  mmap.MMap
 	count int64
 }
