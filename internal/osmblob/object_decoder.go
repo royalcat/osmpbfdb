@@ -226,7 +226,7 @@ func (dec *ObjectDecoder) extractDenseNodes(primitiveBlock *osmproto.PrimitiveBl
 		}
 
 		keyvals := denseNodes.GetKeysVals()
-		kvs := map[int32]int32{}
+		kvs := make(map[int32]int32, len(keyvals)/2)
 		kvsIdx := 0
 		kvsMoveNext := func() {
 			clear(kvs)
