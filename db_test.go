@@ -392,6 +392,14 @@ func BenchmarkGet(b *testing.B) {
 			)
 		})
 
+		b.Run("cache_ristretto", func(b *testing.B) {
+			benchDBConfig(b, f,
+				osmpbfdb.Config{
+					CacheType: osmpbfdb.CacheTypeRistretto,
+				},
+			)
+		})
+
 		b.Run("cache_weak_defaultGC", func(b *testing.B) {
 			benchDBConfig(b, f,
 				osmpbfdb.Config{
@@ -420,6 +428,14 @@ func BenchmarkGet(b *testing.B) {
 			benchDBConfig(b, f,
 				osmpbfdb.Config{
 					CacheType: osmpbfdb.CacheTypeLRU,
+				},
+			)
+		})
+
+		b.Run("cache_ristretto", func(b *testing.B) {
+			benchDBConfig(b, f,
+				osmpbfdb.Config{
+					CacheType: osmpbfdb.CacheTypeRistretto,
 				},
 			)
 		})

@@ -10,9 +10,10 @@ type objCache[K comparable] interface {
 type CacheType string
 
 const (
-	CacheTypeWeak CacheType = "weak"
-	CacheTypeLRU  CacheType = "LRU"
-	CacheTypeNone CacheType = "none" // for testing and benchmarking
+	CacheTypeWeak      CacheType = "weak"
+	CacheTypeLRU       CacheType = "LRU"
+	CacheTypeRistretto CacheType = "ristretto"
+	CacheTypeNone      CacheType = "none" // for testing and benchmarking
 )
 
 type cacheNone[K any] struct{}

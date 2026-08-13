@@ -70,6 +70,12 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	switch config.CacheType {
 	case CacheTypeLRU:
 		readCache = newLRUObjCache[uint32](1000)
+	case CacheTypeRistretto:
+		ristrettoCache, err := newRistrettoObjCache[uint32](1000)
+		if err != nil {
+			return nil, fmt.Errorf("create ristretto cache: %w", err)
+		}
+		readCache = ristrettoCache
 	case CacheTypeWeak:
 		readCache = newWeakObjCache[uint32]()
 	case CacheTypeNone:
