@@ -24,7 +24,7 @@ func TestIndex(t *testing.T) {
 
 	testValues := []struct {
 		Key   int64
-		Value uint32
+		Value uint64
 	}{
 		{1, 13},
 		{2, 13},
@@ -78,7 +78,7 @@ func TestIndex(t *testing.T) {
 	// }
 }
 
-func expectInIndex[K ~int64](index *rangeindex.Index[K], k K, v uint32) error {
+func expectInIndex[K ~int64](index *rangeindex.Index[K], k K, v uint64) error {
 	res, ok := index.Get(k)
 	if !ok {
 		return fmt.Errorf("expected to find %v", k)
@@ -87,4 +87,48 @@ func expectInIndex[K ~int64](index *rangeindex.Index[K], k K, v uint32) error {
 		return fmt.Errorf("expected %v, got %v", v, res)
 	}
 	return nil
+}
+
+func TestIndexValuesAbove4GiB(t *testing.T) {
+	f, err := os.CreateTemp(t.TempDir(), "idx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	b, err := rangeindex.OpenIndexBuilder[int64](f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const big = uint64(5) << 32 // 20 GiB, does not fit in uint32
+	for i, v := range []uint64{1, big, big + 1<<20} {
+		if err := b.Add(int64(i*10), v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	idx, err := b.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, want := range []uint64{1, big, big + 1<<20} {
+		got, ok := idx.Get(int64(i * 10))
+		if !ok || got != want {
+			t.Fatalf("key %d: got %d ok=%v, want %d", i*10, got, ok, want)
+		}
+	}
+}
+
+func TestOpenIndexRejectsWrongSize(t *testing.T) {
+	f, err := os.CreateTemp(t.TempDir(), "idx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	// 20 bytes is one window of the old uint32 layout.
+	if _, err := f.Write(make([]byte, 20)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rangeindex.OpenIndex[int64](f); err == nil {
+		t.Fatal("expected an error for a stale index file")
+	}
 }

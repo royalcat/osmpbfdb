@@ -16,8 +16,8 @@ import (
 type DB struct {
 	blobReader *osmblob.BlobReader
 
-	readCache objCache[uint32]
-	readGroup singleflight.Group[uint32, []osm.Object]
+	readCache objCache[uint64]
+	readGroup singleflight.Group[uint64, []osm.Object]
 
 	indexes *Indexes
 
@@ -29,6 +29,11 @@ type DB struct {
 var _ OsmDB = (*DB)(nil)
 
 const chunkSize = 64 * 1024 // 64KB
+
+// indexFormat is part of the index directory name. Bump it whenever the on-disk
+// index layout changes, so an index written by an older version is rebuilt
+// instead of being misparsed. v2: 64-bit blob offsets (24-byte windows).
+const indexFormat = "v2"
 
 func hashInput(r io.ReaderAt) (string, error) {
 	chunk := make([]byte, chunkSize)
@@ -66,20 +71,20 @@ func (c *Config) SetDefaults() {
 func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	config.SetDefaults()
 
-	var readCache objCache[uint32]
+	var readCache objCache[uint64]
 	switch config.CacheType {
 	case CacheTypeLRU:
-		readCache = newLRUObjCache[uint32](1000)
+		readCache = newLRUObjCache[uint64](1000)
 	case CacheTypeRistretto:
-		ristrettoCache, err := newRistrettoObjCache[uint32](1000)
+		ristrettoCache, err := newRistrettoObjCache[uint64](1000)
 		if err != nil {
 			return nil, fmt.Errorf("create ristretto cache: %w", err)
 		}
 		readCache = ristrettoCache
 	case CacheTypeWeak:
-		readCache = newWeakObjCache[uint32]()
+		readCache = newWeakObjCache[uint64]()
 	case CacheTypeNone:
-		readCache = &cacheNone[uint32]{}
+		readCache = &cacheNone[uint64]{}
 	default:
 		return nil, fmt.Errorf("unknown cache type: %v", config.CacheType)
 	}
@@ -96,7 +101,7 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 		return nil, fmt.Errorf("failed to hash input: %w", err)
 	}
 
-	indexDir := path.Join(config.IndexDir, dbHash)
+	indexDir := path.Join(config.IndexDir, indexFormat+"-"+dbHash)
 	db.indexes, err = openIndexes(db.log, indexDir, db.blobReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open indexes: %w", err)
@@ -113,7 +118,7 @@ type objSelector struct {
 
 const typicalBlobObjectsCount = 8000
 
-func (db *DB) readObjects(offset uint32, selector objSelector) ([]osm.Object, error) {
+func (db *DB) readObjects(offset uint64, selector objSelector) ([]osm.Object, error) {
 	objDecoderParams := osmblob.ObjectDecoderParams{
 		SkipInfo: db.skipInfo,
 	}

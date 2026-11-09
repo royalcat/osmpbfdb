@@ -25,7 +25,7 @@ func iterForType[T osm.Object, ID ~int64](db *DB, index *rangeindex.Index[ID]) i
 
 		go func() {
 			defer close(chunkChan)
-			readenChunks := map[uint32]struct{}{}
+			readenChunks := map[uint64]struct{}{}
 			for window := range index.RangeWindows() {
 				if _, ok := readenChunks[window.Value]; ok {
 					continue

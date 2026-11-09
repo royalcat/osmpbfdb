@@ -2,6 +2,7 @@ package osmpbfdb
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"iter"
 	"sync"
@@ -15,6 +16,7 @@ type MultiDB struct {
 
 func OpenMultiDB(readers []io.ReaderAt, config Config) (*MultiDB, error) {
 	dbs := make([]*DB, len(readers))
+	errs := make([]error, len(readers))
 
 	var wg sync.WaitGroup
 	for i, reader := range readers {
@@ -23,12 +25,23 @@ func OpenMultiDB(readers []io.ReaderAt, config Config) (*MultiDB, error) {
 			defer wg.Done()
 			db, err := OpenDB(reader, config)
 			if err != nil {
+				errs[i] = fmt.Errorf("input %d: %w", i, err)
 				return
 			}
 			dbs[i] = db
 		}(i, reader)
 	}
 	wg.Wait()
+	if err := errors.Join(errs...); err != nil {
+		// A missing database would turn into a nil dereference later and a
+		// partial index into a silently wrong dataset, so fail the whole open.
+		for _, db := range dbs {
+			if db != nil {
+				_ = db.Close()
+			}
+		}
+		return nil, err
+	}
 	return NewMultiDB(dbs), nil
 }
 

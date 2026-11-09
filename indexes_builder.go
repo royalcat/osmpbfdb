@@ -67,7 +67,7 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 
 	var group errgroup.Group
 	type blobAt struct {
-		offset     uint32
+		offset     uint64
 		blobHeader *osmproto.BlobHeader
 		blob       *osmproto.Blob
 	}
@@ -91,7 +91,7 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 			}
 
 			blobChan <- blobAt{
-				offset:     uint32(bytesRead),
+				offset:     uint64(bytesRead),
 				blobHeader: blobHeader,
 				blob:       blob,
 			}
@@ -102,7 +102,16 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 		return nil
 	})
 
-	group.Go(func() error {
+	group.Go(func() (retErr error) {
+		// On failure keep draining the channel so the reader goroutine can
+		// never block on a send nobody receives.
+		defer func() {
+			if retErr != nil {
+				for range blobChan {
+				}
+			}
+		}()
+
 		var objectCount int64
 		var blobCount int64
 
@@ -113,46 +122,46 @@ func buildIndex(parentLog *slog.Logger, indexDir string, blobReader *osmblob.Blo
 		for blobAt := range blobChan {
 			objDec, err := osmblob.NewDecoderFromBlob(blobAt.blob, objDecoderParams)
 			if err != nil {
-				log.Error("failed to decode blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-				return nil
+				log.Error("failed to decode blob", slog.Uint64("offset", blobAt.offset), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				return fmt.Errorf("blob at offset %d: %w", blobAt.offset, err)
 			}
 
 			nodes, err := objDec.DecodeNodes()
 			if err != nil {
-				log.Error("failed to get nodes from blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-				return nil
+				log.Error("failed to get nodes from blob", slog.Uint64("offset", blobAt.offset), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				return fmt.Errorf("blob at offset %d: %w", blobAt.offset, err)
 			}
 			for _, node := range nodes {
-				err := nodeIndexBuilder.Add(node.ID, uint32(blobAt.offset))
+				err := nodeIndexBuilder.Add(node.ID, blobAt.offset)
 				if err != nil {
-					log.Error("failed to add node to index", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-					return nil
+					log.Error("failed to add node to index", slog.Uint64("offset", blobAt.offset), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+					return fmt.Errorf("blob at offset %d: %w", blobAt.offset, err)
 				}
 			}
 
 			ways, err := objDec.DecodeWays()
 			if err != nil {
-				log.Error("failed to get ways from blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-				return nil
+				log.Error("failed to get ways from blob", slog.Uint64("offset", blobAt.offset), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				return fmt.Errorf("blob at offset %d: %w", blobAt.offset, err)
 			}
 			for _, way := range ways {
-				err := wayIndexBuilder.Add(way.ID, uint32(blobAt.offset))
+				err := wayIndexBuilder.Add(way.ID, blobAt.offset)
 				if err != nil {
-					log.Error("failed to add way to index", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-					return nil
+					log.Error("failed to add way to index", slog.Uint64("offset", blobAt.offset), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+					return fmt.Errorf("blob at offset %d: %w", blobAt.offset, err)
 				}
 			}
 
 			relations, err := objDec.DecodeRelations()
 			if err != nil {
-				log.Error("failed to get relations from blob", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-				return nil
+				log.Error("failed to get relations from blob", slog.Uint64("offset", blobAt.offset), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+				return fmt.Errorf("blob at offset %d: %w", blobAt.offset, err)
 			}
 			for _, relation := range relations {
-				err := relationIndexBuilder.Add(relation.ID, uint32(blobAt.offset))
+				err := relationIndexBuilder.Add(relation.ID, blobAt.offset)
 				if err != nil {
-					log.Error("failed to add relation to index", slog.Int64("offset", n), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
-					return nil
+					log.Error("failed to add relation to index", slog.Uint64("offset", blobAt.offset), slog.String("type", blobAt.blobHeader.GetType()), slog.Any("error", err))
+					return fmt.Errorf("blob at offset %d: %w", blobAt.offset, err)
 				}
 			}
 
