@@ -18,6 +18,12 @@ func OpenMultiDB(readers []io.ReaderAt, config Config) (*MultiDB, error) {
 	dbs := make([]*DB, len(readers))
 	errs := make([]error, len(readers))
 
+	// Every input gets its own coordinate cache: split the budget.
+	config.SetDefaults()
+	if config.CoordCacheBytes > 0 && len(readers) > 1 {
+		config.CoordCacheBytes /= int64(len(readers))
+	}
+
 	var wg sync.WaitGroup
 	for i, reader := range readers {
 		wg.Add(1)

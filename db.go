@@ -19,6 +19,11 @@ type DB struct {
 	readCache objCache[uint64]
 	readGroup singleflight.Group[uint64, []osm.Object]
 
+	// coords caches coordinate-only node blocks for GetNodeCoords. Nil when the
+	// cache is disabled.
+	coords     *coordCache
+	coordGroup singleflight.Group[uint64, *osmblob.NodeCoords]
+
 	indexes *Indexes
 
 	skipInfo bool
@@ -53,6 +58,14 @@ type Config struct {
 	CacheType CacheType // default "lru"
 	SkipInfo  bool      // Skip info decoding osm objects inf (version, changeset, user name and id)
 	Logger    *slog.Logger
+
+	// CoordCacheBytes bounds the memory of the node coordinate cache used by
+	// GetNodeCoords. Zero selects 64 MiB; negative disables the cache. A
+	// MultiDB splits the budget evenly between its inputs.
+	CoordCacheBytes int64
+	// CoordCachePolicy selects the cache admission policy, "2q" (default) or
+	// "lru".
+	CoordCachePolicy CoordCachePolicy
 }
 
 func (c *Config) SetDefaults() {
@@ -64,6 +77,12 @@ func (c *Config) SetDefaults() {
 	}
 	if c.CacheType == "" {
 		c.CacheType = CacheTypeLRU
+	}
+	if c.CoordCacheBytes == 0 {
+		c.CoordCacheBytes = defaultCoordCacheBytes
+	}
+	if c.CoordCachePolicy == "" {
+		c.CoordCachePolicy = CoordCachePolicy2Q
 	}
 }
 
@@ -92,6 +111,7 @@ func OpenDB(r io.ReaderAt, config Config) (*DB, error) {
 	db := &DB{
 		blobReader: osmblob.NewBlobReader(r),
 		readCache:  readCache,
+		coords:     newCoordCache(config.CoordCacheBytes, config.CoordCachePolicy),
 		skipInfo:   config.SkipInfo,
 		log:        config.Logger,
 	}
