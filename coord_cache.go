@@ -90,7 +90,7 @@ func newCoordCache(budget int64, policy CoordCachePolicy) *coordCache {
 	if budget <= 0 {
 		return nil
 	}
-	twoQ := policy != CoordCachePolicyLRU
+	twoQ := policy == CoordCachePolicy2Q
 
 	c := &coordCache{}
 	per := budget / coordShardCount

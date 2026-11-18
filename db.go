@@ -63,8 +63,8 @@ type Config struct {
 	// GetNodeCoords. Zero selects 64 MiB; negative disables the cache. A
 	// MultiDB splits the budget evenly between its inputs.
 	CoordCacheBytes int64
-	// CoordCachePolicy selects the cache admission policy, "2q" (default) or
-	// "lru".
+	// CoordCachePolicy selects the cache admission policy, "lru" (default) or
+	// "2q".
 	CoordCachePolicy CoordCachePolicy
 }
 
@@ -82,7 +82,7 @@ func (c *Config) SetDefaults() {
 		c.CoordCacheBytes = defaultCoordCacheBytes
 	}
 	if c.CoordCachePolicy == "" {
-		c.CoordCachePolicy = CoordCachePolicy2Q
+		c.CoordCachePolicy = CoordCachePolicyLRU
 	}
 }
 
